@@ -6,6 +6,10 @@ function StaffDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // =====================================================
+    // LOAD ORDERS
+    // =====================================================
+
     useEffect(() => {
         fetchOrders();
     }, []);
@@ -15,102 +19,350 @@ function StaffDashboard() {
             setLoading(true);
             setError("");
 
-            console.log("Loading staff orders...");
-
             const response = await api.get("/staff/orders");
-
-            console.log("STAFF ORDERS RESPONSE:", response.data);
 
             setOrders(
                 Array.isArray(response.data)
                     ? response.data
-                    : response.data.orders || []
+                    : response.data?.orders || []
             );
         } catch (err) {
-            console.error("STAFF ORDERS ERROR:", err);
+            console.error(
+                "STAFF ORDERS ERROR:",
+                err.response?.data || err
+            );
 
-            console.log("Status:", err.response?.status);
-            console.log("Response:", err.response?.data);
+            setOrders([]);
 
             setError(
                 err.response?.data?.message ||
                 err.response?.data?.error ||
                 "Unable to load orders."
             );
-
-            setOrders([]);
         } finally {
             setLoading(false);
         }
     };
+
+    // =====================================================
+    // UPDATE ORDER STATUS
+    // =====================================================
 
     const updateOrderStatus = async (orderId, status) => {
         try {
             await api.put(
                 `/staff/orders/${orderId}/status`,
                 {
-                    status: status,
+                    status: status
                 }
             );
 
-            alert(`Order #${orderId} marked as ${status}`);
+            setOrders((prevOrders) =>
+                prevOrders.map((order) =>
+                    order.id === orderId
+                        ? {
+                              ...order,
+                              status: status
+                          }
+                        : order
+                )
+            );
 
-            fetchOrders();
-
+            alert(
+                `Order #${orderId} marked as ${status}`
+            );
         } catch (err) {
-            console.error("STATUS UPDATE ERROR:", err);
+            console.error(
+                "STATUS UPDATE ERROR:",
+                err.response?.data || err
+            );
 
             alert(
                 err.response?.data?.message ||
+                err.response?.data?.error ||
                 "Unable to update order status."
             );
         }
     };
 
-    return (
-        <div style={pageStyle}>
+    // =====================================================
+    // GET CUSTOMER NAME
+    // =====================================================
 
-            <div style={headerStyle}>
+    const getCustomerName = (order) => {
+        return (
+            order.customerName ||
+            order.userName ||
+            order.customer?.name ||
+            order.user?.name ||
+            "Customer"
+        );
+    };
+
+    // =====================================================
+    // GET CUSTOMER EMAIL
+    // =====================================================
+
+    const getCustomerEmail = (order) => {
+        return (
+            order.customerEmail ||
+            order.userEmail ||
+            order.customer?.email ||
+            order.user?.email ||
+            "N/A"
+        );
+    };
+
+    // =====================================================
+    // GET PRODUCT NAME
+    // =====================================================
+
+    const getProductName = (item) => {
+        return (
+            item?.product?.name ||
+            item?.productName ||
+            item?.name ||
+            "Product"
+        );
+    };
+
+    // =====================================================
+    // GET PRODUCT IMAGE
+    // =====================================================
+
+    const getProductImage = (item) => {
+        return (
+            item?.product?.image ||
+            item?.product?.imageUrl ||
+            item?.image ||
+            item?.imageUrl ||
+            ""
+        );
+    };
+
+    // =====================================================
+    // GET PRODUCT QUANTITY
+    // =====================================================
+
+    const getProductQuantity = (item) => {
+        return (
+            item?.quantity ??
+            item?.qty ??
+            1
+        );
+    };
+
+    // =====================================================
+    // FORMAT DATE
+    // =====================================================
+
+    const formatDate = (date) => {
+        if (!date) return "N/A";
+
+        try {
+            return new Date(date).toLocaleString(
+                "en-IN"
+            );
+        } catch {
+            return date;
+        }
+    };
+
+    // =====================================================
+    // GET STATUS COLOR
+    // =====================================================
+
+    const getStatusStyle = (status) => {
+        switch (status) {
+            case "PENDING":
+                return {
+                    backgroundColor: "#fef3c7",
+                    color: "#92400e"
+                };
+
+            case "PREPARING":
+                return {
+                    backgroundColor: "#dbeafe",
+                    color: "#1d4ed8"
+                };
+
+            case "READY":
+                return {
+                    backgroundColor: "#dcfce7",
+                    color: "#166534"
+                };
+
+            case "COMPLETED":
+                return {
+                    backgroundColor: "#e0e7ff",
+                    color: "#4338ca"
+                };
+
+            case "DELIVERED":
+                return {
+                    backgroundColor: "#dcfce7",
+                    color: "#166534"
+                };
+
+            case "CANCELLED":
+                return {
+                    backgroundColor: "#fee2e2",
+                    color: "#991b1b"
+                };
+
+            default:
+                return {
+                    backgroundColor: "#e5e7eb",
+                    color: "#374151"
+                };
+        }
+    };
+
+    // =====================================================
+    // BUTTON STYLE
+    // =====================================================
+
+    const actionButton = (
+        backgroundColor,
+        disabled = false
+    ) => ({
+        backgroundColor,
+        color: "#ffffff",
+        border: "none",
+        padding: "10px 16px",
+        borderRadius: "7px",
+        cursor: disabled
+            ? "not-allowed"
+            : "pointer",
+        fontWeight: "600",
+        opacity: disabled ? 0.6 : 1
+    });
+
+    // =====================================================
+    // RENDER
+    // =====================================================
+
+    return (
+        <div
+            style={{
+                minHeight: "100vh",
+                backgroundColor: "#f8fafc",
+                padding: "30px",
+                fontFamily: "Arial, sans-serif"
+            }}
+        >
+            {/* ================= HEADER ================= */}
+
+            <div
+                style={{
+                    maxWidth: "1200px",
+                    margin: "0 auto 30px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: "20px",
+                    flexWrap: "wrap"
+                }}
+            >
                 <div>
-                    <h1 style={titleStyle}>
+                    <h1
+                        style={{
+                            margin: 0,
+                            color: "#0f172a"
+                        }}
+                    >
                         Staff Dashboard
                     </h1>
 
-                    <p style={subtitleStyle}>
-                        Manage customer orders and fulfillment.
+                    <p
+                        style={{
+                            color: "#64748b",
+                            marginTop: "8px"
+                        }}
+                    >
+                        Manage customer orders and
+                        prepare products for delivery
+                        or pickup.
                     </p>
                 </div>
 
                 <button
                     onClick={fetchOrders}
-                    style={refreshButton}
+                    disabled={loading}
+                    style={{
+                        backgroundColor: "#16a34a",
+                        color: "#ffffff",
+                        border: "none",
+                        padding: "12px 18px",
+                        borderRadius: "8px",
+                        cursor: loading
+                            ? "not-allowed"
+                            : "pointer",
+                        fontWeight: "600",
+                        opacity: loading ? 0.6 : 1
+                    }}
                 >
                     🔄 Refresh Orders
                 </button>
             </div>
 
-            {/* ERROR */}
+            {/* ================= ERROR ================= */}
 
             {error && (
-                <div style={errorStyle}>
+                <div
+                    style={{
+                        maxWidth: "1200px",
+                        margin: "0 auto 20px",
+                        padding: "15px 20px",
+                        backgroundColor: "#fee2e2",
+                        color: "#991b1b",
+                        border: "1px solid #fecaca",
+                        borderRadius: "8px"
+                    }}
+                >
                     <strong>Error:</strong> {error}
                 </div>
             )}
 
-            {/* LOADING */}
+            {/* ================= LOADING ================= */}
 
             {loading ? (
-                <div style={emptyCard}>
-                    <h2>Loading Orders...</h2>
+                <div
+                    style={{
+                        maxWidth: "1200px",
+                        margin: "40px auto",
+                        backgroundColor: "#ffffff",
+                        padding: "60px 30px",
+                        textAlign: "center",
+                        borderRadius: "12px"
+                    }}
+                >
+                    <h2>
+                        Loading Orders...
+                    </h2>
+
                     <p>
-                        Please wait while we load customer orders.
+                        Please wait while we load
+                        customer orders.
                     </p>
                 </div>
             ) : orders.length === 0 ? (
-
-                <div style={emptyCard}>
-
-                    <div style={iconStyle}>
+                <div
+                    style={{
+                        maxWidth: "1200px",
+                        margin: "40px auto",
+                        backgroundColor: "#ffffff",
+                        padding: "60px 30px",
+                        textAlign: "center",
+                        borderRadius: "12px",
+                        border: "1px solid #e2e8f0"
+                    }}
+                >
+                    <div
+                        style={{
+                            fontSize: "50px"
+                        }}
+                    >
                         🛒
                     </div>
 
@@ -119,89 +371,416 @@ function StaffDashboard() {
                     </h2>
 
                     <p>
-                        There are currently no orders waiting
-                        for processing.
+                        There are currently no orders
+                        waiting for processing.
                     </p>
 
                     <button
                         onClick={fetchOrders}
-                        style={refreshButton}
+                        style={{
+                            backgroundColor: "#16a34a",
+                            color: "#ffffff",
+                            border: "none",
+                            padding: "12px 18px",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontWeight: "600"
+                        }}
                     >
                         🔄 Refresh
                     </button>
-
                 </div>
-
             ) : (
-
-                <div style={ordersContainer}>
-
+                <div
+                    style={{
+                        maxWidth: "1200px",
+                        margin: "0 auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "20px"
+                    }}
+                >
                     {orders.map((order) => (
-
                         <div
                             key={order.id}
-                            style={orderCard}
+                            style={{
+                                backgroundColor:
+                                    "#ffffff",
+                                padding: "25px",
+                                borderRadius: "12px",
+                                border:
+                                    "1px solid #e2e8f0",
+                                boxShadow:
+                                    "0 2px 5px rgba(0,0,0,0.05)"
+                            }}
                         >
+                            {/* ============ ORDER HEADER ============ */}
 
-                            <div style={orderHeader}>
-
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent:
+                                        "space-between",
+                                    alignItems:
+                                        "flex-start",
+                                    gap: "20px",
+                                    flexWrap: "wrap"
+                                }}
+                            >
                                 <div>
-                                    <h2>
+                                    <h2
+                                        style={{
+                                            marginTop: 0
+                                        }}
+                                    >
                                         Order #{order.id}
                                     </h2>
 
                                     <p>
-                                        Customer:{" "}
-                                        {order.customerName ||
-                                            order.userName ||
-                                            order.customer?.name ||
-                                            "Customer"}
+                                        <strong>
+                                            Customer:
+                                        </strong>{" "}
+                                        {getCustomerName(
+                                            order
+                                        )}
                                     </p>
 
                                     <p>
-                                        Email:{" "}
-                                        {order.customerEmail ||
-                                            order.userEmail ||
-                                            order.customer?.email ||
-                                            "N/A"}
+                                        <strong>
+                                            Email:
+                                        </strong>{" "}
+                                        {getCustomerEmail(
+                                            order
+                                        )}
                                     </p>
                                 </div>
 
                                 <span
-                                    style={statusStyle(
-                                        order.status
-                                    )}
+                                    style={{
+                                        ...getStatusStyle(
+                                            order.status
+                                        ),
+                                        padding:
+                                            "8px 14px",
+                                        borderRadius:
+                                            "20px",
+                                        fontWeight:
+                                            "700"
+                                    }}
                                 >
-                                    {order.status || "PENDING"}
+                                    {order.status ||
+                                        "PENDING"}
                                 </span>
-
                             </div>
 
-                            <hr />
+                            <hr
+                                style={{
+                                    border:
+                                        "none",
+                                    borderTop:
+                                        "1px solid #e2e8f0",
+                                    margin:
+                                        "20px 0"
+                                }}
+                            />
 
-                            <div style={orderInfo}>
+                            {/* ============ PRODUCTS ============ */}
 
-                                <p>
-                                    <strong>Total:</strong>{" "}
-                                    ₹
-                                    {order.totalAmount ||
-                                        order.total ||
-                                        0}
+                            <h3
+                                style={{
+                                    marginBottom:
+                                        "15px"
+                                }}
+                            >
+                                Ordered Products
+                            </h3>
+
+                            {order.items &&
+                            order.items.length > 0 ? (
+                                <div
+                                    style={{
+                                        display:
+                                            "flex",
+                                        flexDirection:
+                                            "column",
+                                        gap: "12px"
+                                    }}
+                                >
+                                    {order.items.map(
+                                        (
+                                            item,
+                                            index
+                                        ) => {
+                                            const image =
+                                                getProductImage(
+                                                    item
+                                                );
+
+                                            const productName =
+                                                getProductName(
+                                                    item
+                                                );
+
+                                            const quantity =
+                                                getProductQuantity(
+                                                    item
+                                                );
+
+                                            return (
+                                                <div
+                                                    key={
+                                                        item.id ||
+                                                        index
+                                                    }
+                                                    style={{
+                                                        display:
+                                                            "flex",
+                                                        alignItems:
+                                                            "center",
+                                                        gap:
+                                                            "15px",
+                                                        padding:
+                                                            "12px",
+                                                        backgroundColor:
+                                                            "#f8fafc",
+                                                        borderRadius:
+                                                            "8px",
+                                                        border:
+                                                            "1px solid #e2e8f0"
+                                                    }}
+                                                >
+                                                    {image ? (
+                                                        <img
+                                                            src={
+                                                                image
+                                                            }
+                                                            alt={
+                                                                productName
+                                                            }
+                                                            style={{
+                                                                width:
+                                                                    "70px",
+                                                                height:
+                                                                    "70px",
+                                                                objectFit:
+                                                                    "cover",
+                                                                borderRadius:
+                                                                    "8px",
+                                                                border:
+                                                                    "1px solid #e2e8f0"
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div
+                                                            style={{
+                                                                width:
+                                                                    "70px",
+                                                                height:
+                                                                    "70px",
+                                                                display:
+                                                                    "flex",
+                                                                alignItems:
+                                                                    "center",
+                                                                justifyContent:
+                                                                    "center",
+                                                                backgroundColor:
+                                                                    "#e2e8f0",
+                                                                borderRadius:
+                                                                    "8px",
+                                                                fontSize:
+                                                                    "12px",
+                                                                textAlign:
+                                                                    "center"
+                                                            }}
+                                                        >
+                                                            No Image
+                                                        </div>
+                                                    )}
+
+                                                    <div
+                                                        style={{
+                                                            flex: 1
+                                                        }}
+                                                    >
+                                                        <h4
+                                                            style={{
+                                                                margin:
+                                                                    "0 0 8px"
+                                                            }}
+                                                        >
+                                                            {
+                                                                productName
+                                                            }
+                                                        </h4>
+
+                                                        <p
+                                                            style={{
+                                                                margin:
+                                                                    "4px 0",
+                                                                color:
+                                                                    "#475569"
+                                                            }}
+                                                        >
+                                                            <strong>
+                                                                Quantity:
+                                                            </strong>{" "}
+                                                            {
+                                                                quantity
+                                                            }
+                                                        </p>
+
+                                                        {item.unitPrice && (
+                                                            <p
+                                                                style={{
+                                                                    margin:
+                                                                        "4px 0",
+                                                                    color:
+                                                                        "#475569"
+                                                                }}
+                                                            >
+                                                                <strong>
+                                                                    Price:
+                                                                </strong>{" "}
+                                                                ₹
+                                                                {
+                                                                    item.unitPrice
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div
+                                                        style={{
+                                                            fontWeight:
+                                                                "700"
+                                                        }}
+                                                    >
+                                                        {item.subtotal
+                                                            ? `₹${item.subtotal}`
+                                                            : ""}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                    )}
+                                </div>
+                            ) : (
+                                <p
+                                    style={{
+                                        color:
+                                            "#64748b"
+                                    }}
+                                >
+                                    No product details
+                                    available.
                                 </p>
+                            )}
 
-                                <p>
-                                    <strong>Order Date:</strong>{" "}
-                                    {order.createdAt
-                                        ? new Date(
-                                              order.createdAt
-                                          ).toLocaleString()
-                                        : "N/A"}
-                                </p>
+                            {/* ============ ORDER DETAILS ============ */}
 
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns:
+                                        "repeat(auto-fit, minmax(200px, 1fr))",
+                                    gap: "15px",
+                                    marginTop:
+                                        "25px",
+                                    paddingTop:
+                                        "20px",
+                                    borderTop:
+                                        "1px solid #e2e8f0"
+                                }}
+                            >
+                                <div>
+                                    <strong>
+                                        Total Amount
+                                    </strong>
+
+                                    <p>
+                                        ₹
+                                        {order.totalAmount ??
+                                            order.total ??
+                                            0}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Order Type
+                                    </strong>
+
+                                    <p>
+                                        {order.orderType ||
+                                            "N/A"}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Payment Method
+                                    </strong>
+
+                                    <p>
+                                        {order.paymentMethod ||
+                                            "N/A"}
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <strong>
+                                        Order Date
+                                    </strong>
+
+                                    <p>
+                                        {formatDate(
+                                            order.createdAt
+                                        )}
+                                    </p>
+                                </div>
+
+                                {order.deliveryAddress && (
+                                    <div>
+                                        <strong>
+                                            Delivery Address
+                                        </strong>
+
+                                        <p>
+                                            {
+                                                order.deliveryAddress
+                                            }
+                                        </p>
+                                    </div>
+                                )}
+
+                                {order.pickupSlot && (
+                                    <div>
+                                        <strong>
+                                            Pickup Slot
+                                        </strong>
+
+                                        <p>
+                                            {
+                                                order.pickupSlot
+                                            }
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
-                            <div style={buttonContainer}>
+                            {/* ============ STAFF ACTIONS ============ */}
 
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent:
+                                        "flex-end",
+                                    gap: "10px",
+                                    marginTop:
+                                        "25px",
+                                    flexWrap: "wrap"
+                                }}
+                            >
                                 <button
                                     onClick={() =>
                                         updateOrderStatus(
@@ -209,7 +788,15 @@ function StaffDashboard() {
                                             "PREPARING"
                                         )
                                     }
-                                    style={button("#0284c7")}
+                                    disabled={
+                                        order.status ===
+                                        "PREPARING"
+                                    }
+                                    style={actionButton(
+                                        "#0284c7",
+                                        order.status ===
+                                            "PREPARING"
+                                    )}
                                 >
                                     Preparing
                                 </button>
@@ -221,7 +808,15 @@ function StaffDashboard() {
                                             "READY"
                                         )
                                     }
-                                    style={button("#16a34a")}
+                                    disabled={
+                                        order.status ===
+                                        "READY"
+                                    }
+                                    style={actionButton(
+                                        "#16a34a",
+                                        order.status ===
+                                            "READY"
+                                    )}
                                 >
                                     Ready
                                 </button>
@@ -233,149 +828,25 @@ function StaffDashboard() {
                                             "COMPLETED"
                                         )
                                     }
-                                    style={button("#475569")}
+                                    disabled={
+                                        order.status ===
+                                        "COMPLETED"
+                                    }
+                                    style={actionButton(
+                                        "#475569",
+                                        order.status ===
+                                            "COMPLETED"
+                                    )}
                                 >
                                     Complete
                                 </button>
-
                             </div>
-
                         </div>
-
                     ))}
-
                 </div>
             )}
-
         </div>
     );
 }
-
-
-/* =========================
-   STYLES
-========================= */
-
-const pageStyle = {
-    minHeight: "100vh",
-    backgroundColor: "#f8fafc",
-    padding: "40px",
-};
-
-const headerStyle = {
-    maxWidth: "1100px",
-    margin: "0 auto 30px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "20px",
-};
-
-const titleStyle = {
-    margin: 0,
-    fontSize: "32px",
-    color: "#0f172a",
-};
-
-const subtitleStyle = {
-    color: "#64748b",
-    marginTop: "8px",
-};
-
-const refreshButton = {
-    backgroundColor: "#16a34a",
-    color: "white",
-    border: "none",
-    padding: "12px 18px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-};
-
-const errorStyle = {
-    maxWidth: "1100px",
-    margin: "0 auto 20px",
-    padding: "15px 20px",
-    backgroundColor: "#fee2e2",
-    color: "#991b1b",
-    border: "1px solid #fecaca",
-    borderRadius: "8px",
-};
-
-const emptyCard = {
-    maxWidth: "1100px",
-    margin: "40px auto",
-    backgroundColor: "white",
-    padding: "60px 30px",
-    textAlign: "center",
-    borderRadius: "12px",
-    border: "1px solid #e2e8f0",
-};
-
-const iconStyle = {
-    fontSize: "50px",
-    marginBottom: "15px",
-};
-
-const ordersContainer = {
-    maxWidth: "1100px",
-    margin: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-};
-
-const orderCard = {
-    backgroundColor: "white",
-    padding: "25px",
-    borderRadius: "12px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 2px 5px rgba(0,0,0,0.05)",
-};
-
-const orderHeader = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-};
-
-const orderInfo = {
-    color: "#475569",
-};
-
-const buttonContainer = {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "10px",
-    marginTop: "20px",
-};
-
-const button = (color) => ({
-    backgroundColor: color,
-    color: "white",
-    border: "none",
-    padding: "10px 15px",
-    borderRadius: "7px",
-    cursor: "pointer",
-    fontWeight: "600",
-});
-
-const statusStyle = (status) => ({
-    padding: "7px 12px",
-    borderRadius: "20px",
-    backgroundColor:
-        status === "COMPLETED"
-            ? "#dcfce7"
-            : status === "READY"
-            ? "#dbeafe"
-            : "#fef3c7",
-    color:
-        status === "COMPLETED"
-            ? "#166534"
-            : status === "READY"
-            ? "#1e40af"
-            : "#92400e",
-    fontWeight: "700",
-});
 
 export default StaffDashboard;

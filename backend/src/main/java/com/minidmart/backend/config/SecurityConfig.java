@@ -1,6 +1,7 @@
 package com.minidmart.backend.config;
 
 import com.minidmart.backend.service.CustomUserDetailsService;
+import com.minidmart.backend.security.JwtAuthFilter;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -30,11 +32,14 @@ import java.util.List;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthFilter jwtAuthFilter;
 
     public SecurityConfig(
-            CustomUserDetailsService userDetailsService) {
+            CustomUserDetailsService userDetailsService,
+            JwtAuthFilter jwtAuthFilter) {
 
         this.userDetailsService = userDetailsService;
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
     // PASSWORD ENCODER
@@ -49,11 +54,9 @@ public class SecurityConfig {
     public DaoAuthenticationProvider authenticationProvider() {
 
         DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(
-                        passwordEncoder()
-                );
+                new DaoAuthenticationProvider(userDetailsService);
 
-        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
 
         return provider;
     }
@@ -86,6 +89,10 @@ public class SecurityConfig {
                                 SessionCreationPolicy.STATELESS
                         )
                 )
+                .addFilterBefore(
+                        jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                )
 
                 .authorizeHttpRequests(auth -> auth
 
@@ -100,13 +107,34 @@ public class SecurityConfig {
                                 "/api/auth/**"
                         ).permitAll()
 
-                        // PRODUCTS
+                        // PRODUCTS: public GET, staff/admin write access
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/products/**"
                         ).permitAll()
 
-                        // ORDERS
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/products/**"
+                        ).hasAnyRole("ADMIN", "STAFF")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/products/**"
+                        ).hasAnyRole("ADMIN", "STAFF")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/products/**"
+                        ).hasAnyRole("ADMIN", "STAFF")
+
+                        // ORDER STATUS: staff/admin only
+                        .requestMatchers(
+                                HttpMethod.PATCH,
+                                "/api/orders/*/status"
+                        ).hasAnyRole("ADMIN", "STAFF")
+
+                        // ORDERS: authenticated customers/staff/admin
                         .requestMatchers(
                                 "/api/orders/**"
                         ).authenticated()

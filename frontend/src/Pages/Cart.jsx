@@ -1,6 +1,4 @@
-import React, {
-  useContext,
-} from "react";
+import React, { useContext } from "react";
 
 import {
   Link,
@@ -14,18 +12,23 @@ import {
 import "../css/Cart.css";
 
 function Cart() {
-  const navigate =
-    useNavigate();
+  const navigate = useNavigate();
+
+  const cartContext = useContext(CartContext);
 
   const {
-    cart,
-    cartTotal,
+    cartItems = [],
+    cartTotal = 0,
     increaseQuantity,
     decreaseQuantity,
     removeFromCart,
-  } = useContext(CartContext);
+  } = cartContext || {};
 
-  if (cart.length === 0) {
+  // ==========================================
+  // EMPTY CART
+  // ==========================================
+
+  if (cartItems.length === 0) {
     return (
       <div className="empty-cart">
 
@@ -53,27 +56,41 @@ function Cart() {
 
       <div className="cart-layout">
 
+        {/* ======================================
+            CART ITEMS
+        ====================================== */}
+
         <div className="cart-items">
 
-          {cart.map((item) => (
+          {cartItems.map((item) => (
 
             <div
               className="cart-item"
               key={item.id}
             >
 
+              {/* PRODUCT IMAGE */}
+
               <div className="cart-item-image">
 
                 {item.imageUrl ? (
+
                   <img
                     src={item.imageUrl}
                     alt={item.name}
                   />
+
                 ) : (
-                  "🛒"
+
+                  <span>
+                    🛒
+                  </span>
+
                 )}
 
               </div>
+
+              {/* PRODUCT INFO */}
 
               <div className="cart-item-info">
 
@@ -86,64 +103,76 @@ function Cart() {
                 </p>
 
                 <h3>
-                  ₹{item.price}
+                  ₹{Number(item.price || 0).toFixed(2)}
                 </h3>
 
               </div>
+
+              {/* QUANTITY CONTROLS */}
 
               <div className="quantity-controls">
 
                 <button
                   onClick={() =>
-                    decreaseQuantity(
-                      item.id
-                    )
+                    decreaseQuantity?.(item.id)
                   }
+                  aria-label="Decrease quantity"
                 >
                   −
                 </button>
 
                 <span>
-                  {item.quantity}
+                  {item.quantity || 1}
                 </span>
 
                 <button
                   onClick={() =>
-                    increaseQuantity(
-                      item.id
-                    )
+                    increaseQuantity?.(item.id)
                   }
+                  disabled={
+                    Number(item.stockQuantity || 0) > 0 &&
+                    Number(item.quantity || 0) >=
+                      Number(item.stockQuantity)
+                  }
+                  aria-label="Increase quantity"
                 >
                   +
                 </button>
 
               </div>
 
+              {/* SUBTOTAL */}
+
               <div className="cart-subtotal">
 
                 ₹
                 {(
-                  Number(item.price) *
-                  item.quantity
+                  Number(item.price || 0) *
+                  Number(item.quantity || 1)
                 ).toFixed(2)}
 
               </div>
 
+              {/* REMOVE */}
+
               <button
                 className="remove-btn"
                 onClick={() =>
-                  removeFromCart(
-                    item.id
-                  )
+                  removeFromCart?.(item.id)
                 }
               >
                 Remove
               </button>
 
             </div>
+
           ))}
 
         </div>
+
+        {/* ======================================
+            CART SUMMARY
+        ====================================== */}
 
         <div className="cart-summary">
 
@@ -152,16 +181,19 @@ function Cart() {
           </h2>
 
           <div className="summary-row">
+
             <span>
               Items Total
             </span>
 
             <span>
-              ₹{cartTotal.toFixed(2)}
+              ₹{Number(cartTotal || 0).toFixed(2)}
             </span>
+
           </div>
 
           <div className="summary-row">
+
             <span>
               Delivery Fee
             </span>
@@ -169,18 +201,21 @@ function Cart() {
             <span>
               FREE
             </span>
+
           </div>
 
           <hr />
 
           <div className="summary-total">
+
             <strong>
               Total
             </strong>
 
             <strong>
-              ₹{cartTotal.toFixed(2)}
+              ₹{Number(cartTotal || 0).toFixed(2)}
             </strong>
+
           </div>
 
           <button
@@ -192,9 +227,17 @@ function Cart() {
             Proceed to Checkout
           </button>
 
+          <Link
+            to="/products"
+            className="continue-shopping"
+          >
+            ← Continue Shopping
+          </Link>
+
         </div>
 
       </div>
+
     </div>
   );
 }

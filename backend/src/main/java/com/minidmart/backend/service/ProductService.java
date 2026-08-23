@@ -2,6 +2,7 @@ package com.minidmart.backend.service;
 
 import com.minidmart.backend.entity.Product;
 import com.minidmart.backend.repository.ProductRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,6 +30,10 @@ public class ProductService {
 
     public Product getProductById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Product not found with id: " + id
+                        )
+                );
     }
 }

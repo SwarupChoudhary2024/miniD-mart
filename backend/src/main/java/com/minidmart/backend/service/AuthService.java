@@ -109,7 +109,9 @@ public class AuthService {
 
         return new AuthResponse(
                 jwt,
+                user.getId(),
                 user.getEmail(),
+                user.getName(),
                 roles
         );
     }

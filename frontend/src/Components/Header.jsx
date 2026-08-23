@@ -1,6 +1,6 @@
 import React, {
-  useState,
   useEffect,
+  useState,
   useContext,
 } from "react";
 
@@ -24,7 +24,7 @@ function Header({ user, setUser }) {
   const [location, setLocation] =
     useState(
       localStorage.getItem("location") ||
-      "Select City"
+      "Select location"
     );
 
   const [
@@ -43,20 +43,33 @@ function Header({ user, setUser }) {
   const [search, setSearch] =
     useState("");
 
+  // ==========================================
+  // SYNC USER
+  // ==========================================
+
   useEffect(() => {
     const syncUser = () => {
-      const storedUser =
-        localStorage.getItem("user");
-
       try {
+        const storedUser =
+          localStorage.getItem("user");
+
         const parsedUser =
           storedUser
             ? JSON.parse(storedUser)
             : null;
 
-        setUser(parsedUser);
-      } catch {
-        setUser(null);
+        if (setUser) {
+          setUser(parsedUser);
+        }
+      } catch (error) {
+        console.error(
+          "User parsing error:",
+          error
+        );
+
+        if (setUser) {
+          setUser(null);
+        }
       }
     };
 
@@ -73,6 +86,10 @@ function Header({ user, setUser }) {
     };
   }, [setUser]);
 
+  // ==========================================
+  // LOGOUT
+  // ==========================================
+
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -88,10 +105,16 @@ function Header({ user, setUser }) {
     navigate("/login");
   };
 
+  // ==========================================
+  // LOCATION
+  // ==========================================
+
   const handleCitySubmit = (e) => {
     e.preventDefault();
 
-    if (!cityInput.trim()) return;
+    if (!cityInput.trim()) {
+      return;
+    }
 
     const selectedCity =
       cityInput.trim();
@@ -108,10 +131,17 @@ function Header({ user, setUser }) {
     setIsLocationModalOpen(false);
   };
 
+  // ==========================================
+  // SEARCH
+  // ==========================================
+
   const handleSearch = (e) => {
     e.preventDefault();
 
-    if (!search.trim()) return;
+    if (!search.trim()) {
+      navigate("/products");
+      return;
+    }
 
     navigate(
       `/products?search=${encodeURIComponent(
@@ -120,112 +150,185 @@ function Header({ user, setUser }) {
     );
   };
 
+  // ==========================================
+  // USER NAME
+  // ==========================================
+
   const userName =
     user?.name ||
     user?.email?.split("@")[0] ||
     "User";
 
+  const firstLetter =
+    userName.charAt(0).toUpperCase();
+
   return (
     <>
-      <nav className="navbar-container">
+      <header className="modern-header">
 
-        <div className="navbar-top">
+        <div className="header-container">
 
-          {/* LOGO */}
+          {/* ================= LOGO ================= */}
 
-          <div className="logo">
-            <Link to="/">
-              <span className="logo-mini">
+          <Link
+            to="/"
+            className="brand-logo"
+          >
+            <div className="brand-icon">
+              M
+            </div>
+
+            <div className="brand-text">
+              <span className="brand-mini">
                 Mini
               </span>
 
-              {" "}
-
-              <span className="logo-dmart">
+              <span className="brand-dmart">
                 D-Mart
               </span>
-            </Link>
-          </div>
+            </div>
+          </Link>
 
-          {/* LOCATION */}
+          {/* ================= LOCATION ================= */}
 
-          <div
-            className="location-container"
+          <button
+            className="location-button"
             onClick={() =>
               setIsLocationModalOpen(true)
             }
           >
-            <span className="pin-icon">
+            <span className="location-icon">
               📍
             </span>
 
-            <div className="location-text">
-              <span className="location-label">
+            <span className="location-content">
+
+              <span className="location-small">
                 Deliver to
               </span>
 
-              <span className="location-value">
+              <span className="location-city">
                 {location}
               </span>
-            </div>
-          </div>
 
-          {/* SEARCH */}
+            </span>
+
+            <span className="location-arrow">
+              ⌄
+            </span>
+          </button>
+
+          {/* ================= SEARCH ================= */}
 
           <form
-            className="search-bar"
+            className="modern-search"
             onSubmit={handleSearch}
           >
+            <span className="search-icon">
+              🔍
+            </span>
+
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder="Search groceries, snacks, dairy..."
               value={search}
               onChange={(e) =>
                 setSearch(e.target.value)
               }
             />
 
-            <button
-              type="submit"
-              className="search-btn"
-            >
-              🔍
-            </button>
+            {search && (
+              <button
+                type="button"
+                className="clear-search"
+                onClick={() =>
+                  setSearch("")
+                }
+              >
+                ×
+              </button>
+            )}
+
           </form>
 
-          {/* RIGHT SIDE */}
+          {/* ================= RIGHT SIDE ================= */}
 
-          <div className="nav-right">
+          <div className="header-actions">
+
+            {/* CART */}
+
+            <button
+              className="modern-cart-btn"
+              onClick={() =>
+                navigate("/cart")
+              }
+            >
+              <span className="cart-icon">
+                🛒
+              </span>
+
+              <span className="cart-text">
+                Cart
+              </span>
+
+              {cartCount > 0 && (
+                <span className="modern-cart-count">
+                  {cartCount > 99
+                    ? "99+"
+                    : cartCount}
+                </span>
+              )}
+            </button>
+
+            {/* USER */}
 
             {user ? (
-
-              <div className="profile-wrapper">
+              <div className="modern-profile-wrapper">
 
                 <button
-                  className="profile-button"
+                  className="modern-profile-button"
                   onClick={() =>
                     setIsProfileOpen(
                       !isProfileOpen
                     )
                   }
                 >
-                  👤 {userName}
-                  <span>⌄</span>
+
+                  <span className="modern-avatar">
+                    {firstLetter}
+                  </span>
+
+                  <span className="profile-name-wrapper">
+
+                    <span className="profile-hello">
+                      Hello,
+                    </span>
+
+                    <span className="profile-name">
+                      {userName}
+                    </span>
+
+                  </span>
+
+                  <span className="profile-arrow">
+                    ⌄
+                  </span>
+
                 </button>
 
                 {isProfileOpen && (
 
-                  <div className="profile-dropdown">
+                  <div className="modern-profile-dropdown">
 
-                    <div className="profile-info">
+                    {/* PROFILE HEADER */}
 
-                      <div className="profile-avatar">
-                        {userName
-                          .charAt(0)
-                          .toUpperCase()}
+                    <div className="dropdown-user-header">
+
+                      <div className="dropdown-avatar">
+                        {firstLetter}
                       </div>
 
-                      <div>
+                      <div className="dropdown-user-info">
 
                         <h4>
                           {userName}
@@ -239,60 +342,65 @@ function Header({ user, setUser }) {
 
                     </div>
 
-                    <div className="profile-divider" />
+                    <div className="dropdown-role">
 
-                    <div className="profile-details">
-
-                      <p>
-                        <strong>Name:</strong>
-                        {" "}
-                        {user?.name ||
-                          "Not Available"}
-                      </p>
-
-                      <p>
-                        <strong>Email:</strong>
-                        {" "}
-                        {user?.email ||
-                          "Not Available"}
-                      </p>
-
-                      <p>
-                        <strong>Role:</strong>
-                        {" "}
-                        {user?.role ||
-                          "USER"}
-                      </p>
+                      {user?.role || "USER"}
 
                     </div>
 
-                    <div className="profile-divider" />
+                    <div className="dropdown-divider" />
+
+                    {/* DASHBOARD */}
 
                     <button
-                      className="profile-menu-btn"
+                      className="dropdown-menu-item"
                       onClick={() => {
                         setIsProfileOpen(false);
                         navigate("/user");
                       }}
                     >
-                      🛍 My Dashboard
+                      <span>
+                        🏠
+                      </span>
+
+                      <span>
+                        My Dashboard
+                      </span>
                     </button>
 
+                    {/* CART */}
+
                     <button
-                      className="profile-menu-btn"
+                      className="dropdown-menu-item"
                       onClick={() => {
                         setIsProfileOpen(false);
                         navigate("/cart");
                       }}
                     >
-                      🛒 My Cart
+                      <span>
+                        🛒
+                      </span>
+
+                      <span>
+                        My Cart
+                      </span>
                     </button>
 
+                    <div className="dropdown-divider" />
+
+                    {/* LOGOUT */}
+
                     <button
-                      className="logout-menu-btn"
+                      className="dropdown-logout"
                       onClick={handleLogout}
                     >
-                      Logout
+                      <span>
+                        🚪
+                      </span>
+
+                      <span>
+                        Logout
+                      </span>
                     </button>
 
                   </div>
@@ -300,60 +408,75 @@ function Header({ user, setUser }) {
                 )}
 
               </div>
-
             ) : (
 
-              <div className="auth-links">
+              <div className="modern-auth-buttons">
 
-                <Link to="/login">
+                <Link
+                  to="/login"
+                  className="login-link"
+                >
                   Login
                 </Link>
 
-                <span>/</span>
-
-                <Link to="/register">
-                  Register
+                <Link
+                  to="/register"
+                  className="register-link"
+                >
+                  Create Account
                 </Link>
 
               </div>
 
             )}
 
-            {/* CART */}
-
-            <button
-              className="cart-btn"
-              onClick={() =>
-                navigate("/cart")
-              }
-            >
-              🛒 Cart
-
-              {cartCount > 0 && (
-                <span className="cart-count">
-                  {cartCount}
-                </span>
-              )}
-
-            </button>
-
           </div>
 
         </div>
 
-      </nav>
+      </header>
 
-      {/* LOCATION MODAL */}
+      {/* ==========================================
+          LOCATION MODAL
+      ========================================== */}
 
       {isLocationModalOpen && (
 
-        <div className="modal-overlay">
+        <div
+          className="modern-modal-overlay"
+          onClick={() =>
+            setIsLocationModalOpen(false)
+          }
+        >
 
-          <div className="modal-content">
+          <div
+            className="modern-location-modal"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
 
-            <h3>
-              Select Delivery Location
-            </h3>
+            <button
+              className="modal-close"
+              onClick={() =>
+                setIsLocationModalOpen(false)
+              }
+            >
+              ×
+            </button>
+
+            <div className="modal-location-icon">
+              📍
+            </div>
+
+            <h2>
+              Where should we deliver?
+            </h2>
+
+            <p>
+              Enter your city to see
+              products available for you.
+            </p>
 
             <form
               onSubmit={handleCitySubmit}
@@ -363,6 +486,7 @@ function Header({ user, setUser }) {
                 type="text"
                 placeholder="Enter your city"
                 value={cityInput}
+                autoFocus
                 onChange={(e) =>
                   setCityInput(
                     e.target.value
@@ -370,22 +494,12 @@ function Header({ user, setUser }) {
                 }
               />
 
-              <div className="modal-actions">
-
-                <button type="submit">
-                  Save
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setIsLocationModalOpen(false)
-                  }
-                >
-                  Cancel
-                </button>
-
-              </div>
+              <button
+                type="submit"
+                className="save-location-btn"
+              >
+                Save Location
+              </button>
 
             </form>
 

@@ -26,7 +26,7 @@ public class DataInitializer {
             // CREATE ROLES
             // ==========================================
 
-            Role customerRole = roleRepository
+            roleRepository
                     .findByName("CUSTOMER")
                     .orElseGet(() -> {
                         Role role = new Role();

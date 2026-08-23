@@ -6,34 +6,64 @@ import React, {
 
 import { Link } from "react-router-dom";
 
-import { CartContext } from "../context/CartContext";
+import {
+  CartContext,
+} from "../context/CartContext";
 
 import "../css/UserDashboard.css";
 
 function UserDashboard({ user }) {
 
-  const cartContext =
-    useContext(CartContext);
+  const cartContext = useContext(CartContext) || {};
 
-  const addToCart =
-    cartContext?.addToCart;
+  const {
+    cartItems = [],
+    addToCart,
+    updateQuantity,
+    removeFromCart,
+  } = cartContext;
 
-  const [products, setProducts] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const categories = [
-    "Grocery",
-    "Dairy",
-    "Beverages",
-    "Snacks",
-    "Personal Care",
-    "Home Care",
-    "Household",
-    "Pooja Needs",
+    {
+      name: "Grocery",
+      icon: "🥬",
+    },
+    {
+      name: "Dairy",
+      icon: "🥛",
+    },
+    {
+      name: "Beverages",
+      icon: "🥤",
+    },
+    {
+      name: "Snacks",
+      icon: "🍪",
+    },
+    {
+      name: "Personal Care",
+      icon: "🧴",
+    },
+    {
+      name: "Home Care",
+      icon: "🧹",
+    },
+    {
+      name: "Household",
+      icon: "🏠",
+    },
+    {
+      name: "Pooja Needs",
+      icon: "🪔",
+    },
   ];
+
+  // ==========================================
+  // FETCH PRODUCTS
+  // ==========================================
 
   useEffect(() => {
 
@@ -41,10 +71,11 @@ function UserDashboard({ user }) {
 
       try {
 
-        const response =
-          await fetch(
-            "http://localhost:8080/api/products"
-          );
+        setLoading(true);
+
+        const response = await fetch(
+          "http://localhost:8080/api/products"
+        );
 
         if (!response.ok) {
           throw new Error(
@@ -55,7 +86,11 @@ function UserDashboard({ user }) {
         const data =
           await response.json();
 
-        setProducts(data);
+        setProducts(
+          Array.isArray(data)
+            ? data
+            : data.products || []
+        );
 
       } catch (error) {
 
@@ -64,208 +99,595 @@ function UserDashboard({ user }) {
           error
         );
 
+        setProducts([]);
+
       } finally {
 
         setLoading(false);
 
       }
+
     };
 
     fetchProducts();
 
   }, []);
 
-  const handleAddToCart = (
-    product
-  ) => {
+  // ==========================================
+  // CART QUANTITY
+  // ==========================================
 
-    if (addToCart) {
+  const getCartQuantity = (productId) => {
+
+    const cartProduct =
+      cartItems.find(
+        (item) =>
+          Number(item.id) ===
+          Number(productId)
+      );
+
+    return Number(
+      cartProduct?.quantity || 0
+    );
+
+  };
+
+  // ==========================================
+  // ADD TO CART
+  // ==========================================
+
+  const handleAddToCart = (product) => {
+
+    if (!addToCart) {
+      console.error(
+        "addToCart function not found"
+      );
+      return;
+    }
+
+    addToCart(product);
+
+  };
+
+  // ==========================================
+  // INCREASE QUANTITY
+  // ==========================================
+
+  const handleIncrease = (product) => {
+
+    const currentQuantity =
+      getCartQuantity(product.id);
+
+    const stock =
+      Number(
+        product.stockQuantity ??
+        product.stock ??
+        0
+      );
+
+    if (
+      stock > 0 &&
+      currentQuantity >= stock
+    ) {
+      return;
+    }
+
+    if (updateQuantity) {
+
+      updateQuantity(
+        product.id,
+        currentQuantity + 1
+      );
+
+    } else if (addToCart) {
+
       addToCart(product);
+
     }
 
   };
 
+  // ==========================================
+  // DECREASE QUANTITY
+  // ==========================================
+
+  const handleDecrease = (product) => {
+
+    const currentQuantity =
+      getCartQuantity(product.id);
+
+    if (currentQuantity <= 1) {
+
+      if (removeFromCart) {
+        removeFromCart(product.id);
+      }
+
+      return;
+
+    }
+
+    if (updateQuantity) {
+
+      updateQuantity(
+        product.id,
+        currentQuantity - 1
+      );
+
+    }
+
+  };
+
+  // ==========================================
+  // USER NAME
+  // ==========================================
+
+  const userName =
+    user?.name ||
+    user?.email?.split("@")[0] ||
+    "Customer";
+
+  // ==========================================
+  // LOADING
+  // ==========================================
+
   if (loading) {
 
     return (
-      <div className="dashboard-loading">
-        Loading products...
+
+      <div className="modern-dashboard">
+
+        <div className="dashboard-container">
+
+          <div className="modern-loader">
+
+            <div className="loader-spinner"></div>
+
+            <p>
+              Loading your products...
+            </p>
+
+          </div>
+
+        </div>
+
       </div>
+
     );
 
   }
 
+  // ==========================================
+  // UI
+  // ==========================================
+
   return (
 
-    <div className="user-dashboard">
+    <main className="modern-dashboard">
 
-      {/* WELCOME */}
+      <div className="dashboard-container">
 
-      <section className="user-welcome">
+        {/* =====================================
+            HERO / WELCOME
+        ===================================== */}
 
-        <div>
+        <section className="dashboard-hero">
 
-          <h1>
-            Welcome back,{" "}
-            {user?.name ||
-              user?.email?.split("@")[0] ||
-              "Customer"} 👋
-          </h1>
+          <div className="hero-content">
 
-          <p>
-            Shop your daily essentials
-            at the best prices.
-          </p>
+            <div className="hero-badge">
 
-        </div>
+              ✨ Fresh groceries, delivered fast
 
-        <Link
-          to="/products"
-          className="view-products-btn"
-        >
-          View All Products →
-        </Link>
+            </div>
 
-      </section>
+            <h1>
 
-      {/* CATEGORIES */}
+              Hello,{" "}
 
-      <section className="dashboard-section">
+              <span>
+                {userName}
+              </span>
 
-        <div className="section-heading">
+              👋
 
-          <h2>
-            Shop by Category
-          </h2>
+            </h1>
 
-          <Link to="/products">
-            View All →
-          </Link>
+            <p>
 
-        </div>
+              Discover fresh groceries and
+              everyday essentials at prices
+              you'll love.
 
-        <div className="dashboard-category-grid">
+            </p>
 
-          {categories.map(
-            (category) => (
+            <div className="hero-actions">
 
               <Link
-                key={category}
-                to={`/products?category=${encodeURIComponent(
-                  category
-                )}`}
-                className="dashboard-category-card"
+                to="/products"
+                className="hero-primary-btn"
               >
+                Start Shopping
+                <span>→</span>
+              </Link>
 
-                <div className="category-icon">
-                  🛍️
-                </div>
+              <Link
+                to="/cart"
+                className="hero-secondary-btn"
+              >
+                🛒 View Cart
 
-                <h3>
-                  {category}
-                </h3>
+                {cartItems.length > 0 && (
+
+                  <span className="hero-cart-count">
+
+                    {cartItems.length}
+
+                  </span>
+
+                )}
 
               </Link>
 
-            )
-          )}
+            </div>
 
-        </div>
+          </div>
 
-      </section>
+          <div className="hero-visual">
 
-      {/* PRODUCTS */}
+            <div className="hero-circle hero-circle-one"></div>
 
-      <section className="dashboard-section">
+            <div className="hero-circle hero-circle-two"></div>
 
-        <div className="section-heading">
+            <div className="hero-main-icon">
+              🛒
+            </div>
 
-          <h2>
-            Recommended Products
-          </h2>
+            <div className="floating-card card-top">
+              🥬 Fresh Products
+            </div>
 
-          <Link to="/products">
-            View All →
-          </Link>
+            <div className="floating-card card-bottom">
+              ⚡ Fast Delivery
+            </div>
 
-        </div>
+          </div>
 
-        <div className="dashboard-product-grid">
+        </section>
 
-          {products
-            .slice(0, 8)
-            .map((product) => (
 
-              <div
-                className="dashboard-product-card"
-                key={product.id}
-              >
+        {/* =====================================
+            CATEGORIES
+        ===================================== */}
 
-                <div className="dashboard-product-image">
+        <section className="dashboard-section">
 
-                  {product.imageUrl ? (
+          <div className="modern-section-header">
 
-                    <img
-                      src={product.imageUrl}
-                      alt={product.name}
-                    />
+            <div>
 
-                  ) : (
+              <span className="section-label">
+                EXPLORE
+              </span>
+
+              <h2>
+                Shop by category
+              </h2>
+
+            </div>
+
+            <Link
+              to="/products"
+              className="modern-view-all"
+            >
+              View all
+              <span>→</span>
+            </Link>
+
+          </div>
+
+
+          <div className="modern-category-grid">
+
+            {categories.map(
+              (category) => (
+
+                <Link
+                  key={category.name}
+                  to={`/products?category=${encodeURIComponent(
+                    category.name
+                  )}`}
+                  className="modern-category-card"
+                >
+
+                  <div className="category-icon-wrapper">
 
                     <span>
-                      🛒
+                      {category.icon}
                     </span>
-
-                  )}
-
-                </div>
-
-                <div className="dashboard-product-info">
-
-                  <h3>
-                    {product.name}
-                  </h3>
-
-                  <p className="product-unit">
-                    {product.unit}
-                  </p>
-
-                  <div className="product-bottom">
-
-                    <span className="dashboard-price">
-                      ₹{product.price}
-                    </span>
-
-                    <button
-                      onClick={() =>
-                        handleAddToCart(
-                          product
-                        )
-                      }
-                      disabled={
-                        product.stockQuantity === 0
-                      }
-                    >
-                      {product.stockQuantity === 0
-                        ? "Out of Stock"
-                        : "Add"}
-                    </button>
 
                   </div>
 
-                </div>
+                  <h3>
+                    {category.name}
+                  </h3>
 
+                  <span className="category-arrow">
+                    →
+                  </span>
+
+                </Link>
+
+              )
+            )}
+
+          </div>
+
+        </section>
+
+
+        {/* =====================================
+            RECOMMENDED PRODUCTS
+        ===================================== */}
+
+        <section className="dashboard-section">
+
+          <div className="modern-section-header">
+
+            <div>
+
+              <span className="section-label">
+                FOR YOU
+              </span>
+
+              <h2>
+                Recommended products
+              </h2>
+
+            </div>
+
+            <Link
+              to="/products"
+              className="modern-view-all"
+            >
+              View all
+              <span>→</span>
+            </Link>
+
+          </div>
+
+
+          {products.length === 0 ? (
+
+            <div className="modern-empty-state">
+
+              <div>
+                📦
               </div>
 
-            ))}
+              <h3>
+                No products available
+              </h3>
 
-        </div>
+              <p>
+                Please check again later.
+              </p>
 
-      </section>
+            </div>
 
-    </div>
+          ) : (
+
+            <div className="modern-product-grid">
+
+              {products
+                .slice(0, 8)
+                .map((product) => {
+
+                  const quantity =
+                    getCartQuantity(
+                      product.id
+                    );
+
+                  const isInCart =
+                    quantity > 0;
+
+                  const stock =
+                    Number(
+                      product.stockQuantity ??
+                      product.stock ??
+                      0
+                    );
+
+                  const isOutOfStock =
+                    stock <= 0;
+
+                  const maxReached =
+                    stock > 0 &&
+                    quantity >= stock;
+
+                  const image =
+                    product.imageUrl ||
+                    product.image ||
+                    "";
+
+                  return (
+
+                    <article
+                      className="modern-product-card"
+                      key={product.id}
+                    >
+
+                      {/* PRODUCT IMAGE */}
+
+                      <div className="modern-product-image">
+
+                        {isOutOfStock && (
+
+                          <span className="stock-badge">
+                            Out of stock
+                          </span>
+
+                        )}
+
+                        {image ? (
+
+                          <img
+                            src={image}
+                            alt={product.name}
+                          />
+
+                        ) : (
+
+                          <div className="product-placeholder">
+
+                            🛒
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+
+                      {/* PRODUCT INFO */}
+
+                      <div className="modern-product-info">
+
+                        <p className="product-category">
+
+                          {product.category ||
+                            "Daily Essentials"}
+
+                        </p>
+
+                        <h3>
+
+                          {product.name}
+
+                        </h3>
+
+                        <p className="modern-product-unit">
+
+                          {product.unit ||
+                            product.quantity ||
+                            "1 Unit"}
+
+                        </p>
+
+
+                        <div className="modern-product-footer">
+
+                          <div>
+
+                            <span className="price-label">
+                              Price
+                            </span>
+
+                            <div className="modern-price">
+
+                              ₹{product.price}
+
+                            </div>
+
+                          </div>
+
+
+                          {/* OUT OF STOCK */}
+
+                          {isOutOfStock ? (
+
+                            <button
+                              className="modern-out-stock"
+                              disabled
+                            >
+                              Unavailable
+                            </button>
+
+                          ) : !isInCart ? (
+
+                            /* ADD BUTTON */
+
+                            <button
+                              className="modern-add-btn"
+                              onClick={() =>
+                                handleAddToCart(
+                                  product
+                                )
+                              }
+                            >
+
+                              <span>
+                                Add
+                              </span>
+
+                              <b>
+                                +
+                              </b>
+
+                            </button>
+
+                          ) : (
+
+                            /* QUANTITY CONTROL */
+
+                            <div className="modern-quantity-control">
+
+                              <button
+                                onClick={() =>
+                                  handleDecrease(
+                                    product
+                                  )
+                                }
+                                aria-label="Decrease quantity"
+                              >
+                                −
+                              </button>
+
+                              <span>
+
+                                {quantity}
+
+                              </span>
+
+                              <button
+                                disabled={
+                                  maxReached
+                                }
+                                onClick={() =>
+                                  handleIncrease(
+                                    product
+                                  )
+                                }
+                                aria-label="Increase quantity"
+                              >
+                                +
+                              </button>
+
+                            </div>
+
+                          )}
+
+                        </div>
+
+                      </div>
+
+                    </article>
+
+                  );
+
+                })}
+
+            </div>
+
+          )}
+
+        </section>
+
+      </div>
+
+    </main>
 
   );
+
 }
 
 export default UserDashboard;

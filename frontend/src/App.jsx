@@ -15,6 +15,7 @@ import AdminDashboard from "./Pages/AdminDashboard";
 import StaffDashboard from "./Pages/StaffDashboard";
 import UserDashboard from "./Pages/UserDashboard";
 import NotFound from "./Pages/NotFound";
+import OrderSuccess from "./Pages/OrderSuccess";
 
 function App() {
   // ================================
@@ -244,7 +245,8 @@ function App() {
           path="*"
           element={<NotFound />}
         />
-
+ 
+        <Route path="/order-success" element={<OrderSuccess/>}/>
       </Routes>
     </>
   );

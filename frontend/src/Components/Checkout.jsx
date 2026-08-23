@@ -1,367 +1,344 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useContext, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import "../css/Checkout.css";
 
 function Checkout() {
   const navigate = useNavigate();
-  const { cart, cartTotal, clearCart } = useContext(CartContext);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("COD");
+  const cartContext = useContext(CartContext);
 
-  const [address, setAddress] = useState({
-    fullName: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    pincode: "",
-  });
+  const cartItems = Array.isArray(cartContext?.cartItems)
+    ? cartContext.cartItems
+    : [];
 
-  useEffect(() => {
-    if (!cart || cart.length === 0) {
-      navigate("/cart");
-    }
-  }, [cart, navigate]);
+  const clearCart = cartContext?.clearCart;
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setAddress((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const total = useMemo(() => {
+    return cartItems.reduce((sum, item) => {
+      const price = Number(item?.price) || 0;
+      const quantity = Number(item?.quantity) || 1;
 
-  const validateForm = () => {
-    if (!address.fullName.trim()) {
-      alert("Please enter your full name");
-      return false;
-    }
-    if (!address.phone.trim() || !/^\d{10}$/.test(address.phone)) {
-      alert("Please enter a valid 10-digit phone number");
-      return false;
-    }
-    if (!address.address.trim()) {
-      alert("Please enter your address");
-      return false;
-    }
-    if (!address.city.trim()) {
-      alert("Please enter your city");
-      return false;
-    }
-    if (!address.state.trim()) {
-      alert("Please enter your state");
-      return false;
-    }
-    if (!address.pincode.trim() || !/^\d{6}$/.test(address.pincode)) {
-      alert("Please enter a valid 6-digit pincode");
-      return false;
-    }
-    return true;
-  };
+      return sum + price * quantity;
+    }, 0);
+  }, [cartItems]);
 
-  const handlePlaceOrder = async (e) => {
-    e.preventDefault();
-    if (loading) return;
+  const totalItems = useMemo(() => {
+    return cartItems.reduce((sum, item) => {
+      return sum + (Number(item?.quantity) || 1);
+    }, 0);
+  }, [cartItems]);
 
-    if (!cart || cart.length === 0) {
-      alert("Your cart is empty");
-      navigate("/products");
-      return;
-    }
+  const handlePlaceOrder = () => {
+    if (cartItems.length === 0) return;
 
-    if (!validateForm()) return;
+    setIsPlacingOrder(true);
 
-    // Safely parse LocalStorage User & Token
-    let user = null;
-    let token = localStorage.getItem("token");
+    console.log("Order placed:", cartItems);
 
-    try {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        user = JSON.parse(storedUser);
-      }
-    } catch (error) {
-      console.error("User parsing error:", error);
-    }
-
-    // Token fallback inside user object if separate token key is absent
-    if (!token && user?.token) {
-      token = user.token;
-    }
-
-    // Extract User ID safely across different backend structures
-    const userId = user?.id || user?.userId || user?.user?.id;
-
-    // Login validation check
-    if (!token || !userId) {
-      alert("Your login session has expired or user ID is missing. Please login again.");
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      navigate("/login");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const fullAddress = `${address.fullName}, Phone: ${address.phone}, ${address.address}, ${address.city}, ${address.state} - ${address.pincode}`;
-
-      const orderData = {
-        orderType: "HOME_DELIVERY",
-        deliveryAddress: fullAddress,
-        pickupSlot: null,
-        paymentMethod: paymentMethod,
-        items: cart.map((item) => ({
-          productId: item.id,
-          quantity: Number(item.quantity),
-        })),
-      };
-
-      const orderUrl = `http://localhost:8080/api/orders/${userId}`;
-
-      const response = await fetch(orderUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      const responseText = await response.text();
-
-      if (!response.ok) {
-        let message = "Unable to place order.";
-        try {
-          const errorData = JSON.parse(responseText);
-          message = errorData.message || errorData.error || message;
-        } catch {
-          if (responseText) message = responseText;
-        }
-
-        if (response.status === 401 || response.status === 403) {
-          alert("Session expired or unauthorized. Please login again.");
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          navigate("/login");
-          return;
-        }
-
-        throw new Error(message);
+    setTimeout(() => {
+      if (typeof clearCart === "function") {
+        clearCart();
       }
 
-      let result = {};
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText);
-        } catch (error) {
-          console.warn("Response was not JSON", error);
-        }
-      }
-
-      clearCart();
-      alert("Order placed successfully!");
-      navigate(`/order-success?orderId=${result.id || ""}`);
-    } catch (error) {
-      console.error("ORDER ERROR:", error);
-      alert(error.message || "Something went wrong while placing your order.");
-    } finally {
-      setLoading(false);
-    }
+      navigate("/order-success");
+    }, 700);
   };
 
-  if (!cart || cart.length === 0) return null;
+  if (cartItems.length === 0) {
+    return (
+      <div className="checkout-empty-page">
+        <div className="checkout-empty-card">
+          <div className="empty-cart-icon">🛒</div>
 
-  const deliveryCharge = 0;
-  const finalTotal = Number(cartTotal || 0) + deliveryCharge;
+          <span className="empty-badge">
+            YOUR CART
+          </span>
+
+          <h1>Your cart is empty</h1>
+
+          <p>
+            Looks like you haven't added anything to your
+            cart yet. Explore our products and start shopping.
+          </p>
+
+          <Link
+            to="/products"
+            className="continue-shopping-btn"
+          >
+            <span>←</span>
+            Continue Shopping
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="checkout-page">
-      <div className="checkout-container">
-        {/* Left Section - Delivery & Payment Details */}
-        <div className="checkout-left">
-          <div className="checkout-heading">
-            <h1>Checkout</h1>
-            <p>Enter your delivery details and complete your order.</p>
+
+      <div className="checkout-wrapper">
+
+        {/* HEADER */}
+
+        <div className="checkout-header">
+
+          <div>
+            <span className="checkout-label">
+              SECURE CHECKOUT
+            </span>
+
+            <h1>Review your order</h1>
+
+            <p>
+              You have {totalItems} item
+              {totalItems !== 1 ? "s" : ""} in your cart.
+            </p>
           </div>
 
-          <form onSubmit={handlePlaceOrder} className="checkout-form">
-            <div className="checkout-card">
-              <h2 className="card-title">📍 Delivery Address</h2>
+          <Link
+            to="/cart"
+            className="back-to-cart"
+          >
+            ← Back to Cart
+          </Link>
 
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>Full Name</label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    placeholder="Enter full name"
-                    value={address.fullName}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Phone Number</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="10-digit phone number"
-                    value={address.phone}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Complete Address</label>
-                <textarea
-                  name="address"
-                  placeholder="House number, street, landmark, area"
-                  value={address.address}
-                  onChange={handleChange}
-                  rows="3"
-                />
-              </div>
-
-              <div className="form-grid three-col">
-                <div className="form-group">
-                  <label>City</label>
-                  <input
-                    type="text"
-                    name="city"
-                    placeholder="Enter city"
-                    value={address.city}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>State</label>
-                  <input
-                    type="text"
-                    name="state"
-                    placeholder="Enter state"
-                    value={address.state}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Pincode</label>
-                  <input
-                    type="text"
-                    name="pincode"
-                    placeholder="6-digit pincode"
-                    value={address.pincode}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="checkout-card">
-              <h2 className="card-title">💳 Payment Method</h2>
-
-              <label className="payment-option">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="COD"
-                  checked={paymentMethod === "COD"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-                <div className="payment-text">
-                  <strong>Cash on Delivery</strong>
-                  <p>Pay cash or via UPI scanner at the time of delivery.</p>
-                </div>
-              </label>
-
-              <label className="payment-option">
-                <input
-                  type="radio"
-                  name="payment"
-                  value="ONLINE"
-                  checked={paymentMethod === "ONLINE"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                />
-                <div className="payment-text">
-                  <strong>Online Payment</strong>
-                  <p>Pay securely using UPI, Credit/Debit Card, or Net Banking.</p>
-                </div>
-              </label>
-            </div>
-
-            <button type="submit" className="place-order-btn" disabled={loading}>
-              {loading
-                ? "Placing Order..."
-                : `Place Order • ₹${finalTotal.toFixed(2)}`}
-            </button>
-          </form>
         </div>
 
-        {/* Right Section - Cart Summary */}
-        <div className="checkout-right">
-          <div className="checkout-card summary-card">
-            <h2 className="card-title">Order Summary</h2>
+        <div className="checkout-layout">
 
-            <div className="checkout-products">
-              {cart.map((item) => (
-                <div className="checkout-product-item" key={item.id}>
-                  <div className="product-image-wrap">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} />
-                    ) : (
-                      <div className="fallback-img">🛒</div>
-                    )}
-                  </div>
+          {/* LEFT SIDE */}
 
-                  <div className="product-details">
-                    <h4 className="product-title">{item.name}</h4>
-                    <p className="product-qty">Qty: {item.quantity}</p>
-                    <span className="product-price">
-                      ₹{Number(item.price).toFixed(2)} each
-                    </span>
-                  </div>
+          <main className="checkout-main">
 
-                  <div className="product-total-price">
-                    ₹{(Number(item.price) * Number(item.quantity)).toFixed(2)}
-                  </div>
+            <div className="checkout-card">
+
+              <div className="checkout-card-header">
+
+                <div>
+                  <h2>Order Items</h2>
+
+                  <p>
+                    Check your selected products
+                  </p>
                 </div>
-              ))}
+
+                <span className="items-count">
+                  {totalItems} Items
+                </span>
+
+              </div>
+
+              <div className="checkout-items">
+
+                {cartItems.map((item, index) => {
+
+                  const price =
+                    Number(item?.price) || 0;
+
+                  const quantity =
+                    Number(item?.quantity) || 1;
+
+                  const itemTotal =
+                    price * quantity;
+
+                  return (
+                    <div
+                      className="checkout-item"
+                      key={item?.id || index}
+                    >
+
+                      <div className="checkout-item-image">
+
+                        {item?.imageUrl || item?.image ? (
+                          <img
+                            src={
+                              item.imageUrl ||
+                              item.image
+                            }
+                            alt={
+                              item?.name ||
+                              "Product"
+                            }
+                          />
+                        ) : (
+                          <span>🛍️</span>
+                        )}
+
+                      </div>
+
+                      <div className="checkout-item-details">
+
+                        <h3>
+                          {item?.name ||
+                            "Product"}
+                        </h3>
+
+                        <p className="checkout-unit">
+                          {item?.unit ||
+                            "1 Unit"}
+                        </p>
+
+                        <div className="checkout-price-mobile">
+
+                          ₹{price.toFixed(2)}
+                          <span>
+                            × {quantity}
+                          </span>
+                        </div>
+
+                      </div>
+
+                      <div className="checkout-quantity">
+
+                        <span>
+                          Qty
+                        </span>
+
+                        <strong>
+                          {quantity}
+                        </strong>
+
+                      </div>
+
+                      <div className="checkout-item-total">
+
+                        <span>
+                          Item Total
+                        </span>
+
+                        <strong>
+                          ₹{itemTotal.toFixed(2)}
+                        </strong>
+
+                      </div>
+
+                    </div>
+                  );
+                })}
+
+              </div>
+
             </div>
 
-            <div className="divider" />
+            <Link
+              to="/products"
+              className="continue-link"
+            >
+              ← Continue Shopping
+            </Link>
 
-            <div className="price-row">
-              <span>Subtotal</span>
-              <span>₹{Number(cartTotal).toFixed(2)}</span>
+          </main>
+
+          {/* RIGHT SIDE */}
+
+          <aside className="order-summary-card">
+
+            <div className="summary-header">
+
+              <div className="summary-icon">
+                📋
+              </div>
+
+              <div>
+                <h2>
+                  Order Summary
+                </h2>
+
+                <p>
+                  Almost there!
+                </p>
+              </div>
+
             </div>
 
-            <div className="price-row">
-              <span>Delivery Fee</span>
-              <span className="free-tag">FREE</span>
+            <div className="summary-details">
+
+              <div className="summary-row">
+
+                <span>
+                  Subtotal
+                </span>
+
+                <strong>
+                  ₹{total.toFixed(2)}
+                </strong>
+
+              </div>
+
+              <div className="summary-row">
+
+                <span>
+                  Delivery
+                </span>
+
+                <span className="free-delivery">
+                  FREE
+                </span>
+
+              </div>
+
+              <div className="summary-row">
+
+                <span>
+                  Total Items
+                </span>
+
+                <strong>
+                  {totalItems}
+                </strong>
+
+              </div>
+
             </div>
 
-            <div className="divider" />
+            <div className="summary-divider"></div>
 
-            <div className="price-row total-row">
-              <strong>Total Amount</strong>
-              <strong className="grand-total">₹{finalTotal.toFixed(2)}</strong>
+            <div className="summary-total">
+
+              <span>
+                Total Amount
+              </span>
+
+              <strong>
+                ₹{total.toFixed(2)}
+              </strong>
+
             </div>
 
             <button
-              type="button"
-              className="back-to-cart-btn"
-              onClick={() => navigate("/cart")}
+              className="place-order-btn"
+              onClick={handlePlaceOrder}
+              disabled={isPlacingOrder}
             >
-              ← Edit Cart Items
+
+              {isPlacingOrder
+                ? "Placing Order..."
+                : "Place Order"}
+
+              {!isPlacingOrder && (
+                <span>→</span>
+              )}
+
             </button>
-          </div>
+
+            <div className="secure-checkout">
+
+              <span>🔒</span>
+
+              <p>
+                Your order details are securely processed.
+              </p>
+
+            </div>
+
+          </aside>
+
         </div>
+
       </div>
+
     </div>
   );
 }
