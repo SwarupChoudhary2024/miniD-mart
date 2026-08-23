@@ -1,0 +1,199 @@
+.home-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  font-family: Arial, sans-serif;
+}
+
+/* Category Navigation Bar */
+.category-bar {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.category-item {
+  color: #475569;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.category-item:hover, .category-item.active {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-radius: 12px;
+  padding: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 24px 0;
+}
+
+.hero-label {
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.hero-content h1 {
+  font-size: 32px;
+  color: #0f172a;
+  margin: 10px 0;
+}
+
+.hero-content p {
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+.shop-btn {
+  background-color: #16a34a;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.hero-image {
+  font-size: 80px;
+}
+
+/* Sections & Grids */
+.section {
+  margin-top: 40px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.view-all {
+  color: #16a34a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 16px;
+}
+
+.category-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  color: #0f172a;
+  transition: transform 0.2s;
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  border-color: #16a34a;
+}
+
+.category-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+/* Product Cards */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.product-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.discount-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #dcfce7;
+  color: #16a34a;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.product-image {
+  font-size: 50px;
+  text-align: center;
+  margin: 20px 0 10px;
+}
+
+.product-card h3 {
+  font-size: 16px;
+  margin: 0;
+  color: #0f172a;
+}
+
+.quantity {
+  color: #64748b;
+  font-size: 13px;
+  margin: 4px 0 12px;
+}
+
+.price-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.current-price {
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.mrp-price {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.add-to-cart-btn {
+  background-color: #ffffff;
+  border: 1px solid #16a34a;
+  color: #16a34a;
+  padding: 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: auto;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #16a34a;
+  color: white;
+}
