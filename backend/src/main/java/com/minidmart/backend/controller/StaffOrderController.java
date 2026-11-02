@@ -1,64 +1,36 @@
 package com.minidmart.backend.controller;
 
 import com.minidmart.backend.entity.Order;
-import com.minidmart.backend.repository.OrderRepository;
+import com.minidmart.backend.service.OrderService;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Order handling for the Staff dashboard (ROLE_STAFF, admins allowed too). */
 @RestController
 @RequestMapping("/api/staff")
-@CrossOrigin(origins = "http://localhost:5173")
 public class StaffOrderController {
 
-    private final OrderRepository orderRepository;
+    private final OrderService orderService;
 
-    public StaffOrderController(OrderRepository orderRepository) {
-        this.orderRepository = orderRepository;
+    public StaffOrderController(OrderService orderService) {
+        this.orderService = orderService;
     }
-
-    // =====================================================
-    // GET ALL ORDERS FOR STAFF
-    // =====================================================
 
     @GetMapping("/orders")
-    public ResponseEntity<List<Order>> getAllOrders() {
-
-        List<Order> orders = orderRepository.findAll();
-
-        return ResponseEntity.ok(orders);
+    public List<Order> getAllOrders() {
+        return orderService.getAllOrders();
     }
 
-    // =====================================================
-    // UPDATE ORDER STATUS
-    // =====================================================
-
+    // PUT /api/staff/orders/{id}/status   body: { "status": "PREPARING" }
     @PutMapping("/orders/{id}/status")
-    public ResponseEntity<?> updateOrderStatus(
+    public Order updateOrderStatus(
             @PathVariable Long id,
-            @RequestBody StatusRequest request
-    ) {
+            @RequestBody StatusRequest request) {
 
-        Order order = orderRepository.findById(id)
-                .orElse(null);
-
-        if (order == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        order.setStatus(request.getStatus());
-
-        Order updatedOrder =
-                orderRepository.save(order);
-
-        return ResponseEntity.ok(updatedOrder);
+        return orderService.updateOrderStatus(id, request == null ? null : request.getStatus());
     }
-
-    // =====================================================
-    // REQUEST CLASS
-    // =====================================================
 
     public static class StatusRequest {
 

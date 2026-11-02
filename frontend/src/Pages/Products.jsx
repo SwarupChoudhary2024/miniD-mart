@@ -13,7 +13,10 @@ import {
   CartContext,
 } from "../context/CartContext";
 
+import api, { getErrorMessage } from "../Services/api";
+
 import "../css/Products.css";
+import { getProductMrp, getDiscountPercent, formatRupees } from "../Services/productPricing";
 
 function Products() {
   const location = useLocation();
@@ -63,19 +66,9 @@ function Products() {
           setLoading(true);
           setError("");
 
-          const response =
-            await fetch(
-              "http://localhost:8080/api/products"
-            );
+          const response = await api.get("/products");
 
-          if (!response.ok) {
-            throw new Error(
-              "Failed to load products"
-            );
-          }
-
-          const data =
-            await response.json();
+        const data = response.data;
 
           setProducts(
             Array.isArray(data)
@@ -86,8 +79,7 @@ function Products() {
         } catch (error) {
 
           setError(
-            error.message ||
-            "Something went wrong"
+            getErrorMessage(error, "Something went wrong")
           );
 
         } finally {
@@ -422,14 +414,10 @@ function Products() {
 
                     <div className="product-image-wrapper">
 
-                      {product.discount && (
-
+                      {getDiscountPercent(product) > 0 && (
                         <span className="discount-badge">
-
-                          {product.discount}
-
+                          {getDiscountPercent(product)}% OFF
                         </span>
-
                       )}
 
                       {image ? (
@@ -495,21 +483,21 @@ function Products() {
 
                       <div className="price-row">
 
-                        <span className="product-price">
-
-                          ₹{product.price}
-
-                        </span>
-
-                        {product.mrp && (
-
-                          <span className="product-mrp">
-
-                            ₹{product.mrp}
-
+                        <div className="product-price-details">
+                          <span className="product-price">
+                            {formatRupees(product.price)}
                           </span>
-
-                        )}
+                          {getProductMrp(product) > Number(product.price || 0) && (
+                            <>
+                              <span className="product-mrp">
+                                MRP <del>{formatRupees(getProductMrp(product))}</del>
+                              </span>
+                              <span className="product-savings">
+                                You save {formatRupees(getProductMrp(product) - Number(product.price || 0))}
+                              </span>
+                            </>
+                          )}
+                        </div>
 
                       </div>
 

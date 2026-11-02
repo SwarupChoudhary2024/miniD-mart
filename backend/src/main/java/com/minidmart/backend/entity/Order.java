@@ -1,6 +1,7 @@
 package com.minidmart.backend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
 
@@ -137,5 +138,29 @@ public class Order {
     public void addItem(OrderItem item) {
         items.add(item);
         item.setOrder(this);
+    }
+
+    // ------------------------------------------------------------------
+    // Customer details sent to the admin / staff dashboards.
+    // (The full User entity stays hidden - it holds the password hash.)
+    // ------------------------------------------------------------------
+    @JsonProperty("customerId")
+    public Long getCustomerId() {
+        return user != null ? user.getId() : null;
+    }
+
+    @JsonProperty("customerName")
+    public String getCustomerName() {
+        return user != null ? user.getName() : null;
+    }
+
+    @JsonProperty("customerEmail")
+    public String getCustomerEmail() {
+        return user != null ? user.getEmail() : null;
+    }
+
+    @JsonProperty("customerPhone")
+    public String getCustomerPhone() {
+        return user != null ? user.getPhone() : null;
     }
 }

@@ -1,11 +1,41 @@
 import React, { useContext, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
+import api, { getErrorMessage } from "../Services/api";
 import "../css/Checkout.css";
 
 function Checkout() {
   const navigate = useNavigate();
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
+
+  const [orderType, setOrderType] = useState("DELIVERY");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+  const [pickupSlot, setPickupSlot] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("COD");
+
+  // Pickup time windows: remaining windows of today + all windows of tomorrow
+  const pickupSlots = useMemo(() => {
+    const windows = [[10, 12], [12, 14], [14, 16], [16, 18], [18, 20]];
+    const fmt = (h) => {
+      const suffix = h >= 12 ? "PM" : "AM";
+      const hour = h % 12 === 0 ? 12 : h % 12;
+      return `${hour} ${suffix}`;
+    };
+    const nowHour = new Date().getHours();
+    const slots = [];
+
+    windows.forEach(([from, to]) => {
+      if (from > nowHour + 1) {
+        slots.push(`Today, ${fmt(from)} - ${fmt(to)}`);
+      }
+    });
+    windows.forEach(([from, to]) => {
+      slots.push(`Tomorrow, ${fmt(from)} - ${fmt(to)}`);
+    });
+
+    return slots;
+  }, []);
 
   const cartContext = useContext(CartContext);
 
@@ -30,20 +60,55 @@ function Checkout() {
     }, 0);
   }, [cartItems]);
 
-  const handlePlaceOrder = () => {
-    if (cartItems.length === 0) return;
+  const handlePlaceOrder = async () => {
+    if (cartItems.length === 0 || isPlacingOrder) return;
 
-    setIsPlacingOrder(true);
+    setOrderError("");
 
-    console.log("Order placed:", cartItems);
+    if (orderType === "DELIVERY" && deliveryAddress.trim().length < 5) {
+      setOrderError("Please enter your full delivery address.");
+      return;
+    }
 
-    setTimeout(() => {
+    if (orderType === "PICKUP" && !pickupSlot) {
+      setOrderError("Please choose a pickup time slot.");
+      return;
+    }
+
+    const payload = {
+      orderType,
+      deliveryAddress:
+        orderType === "DELIVERY" ? deliveryAddress.trim() : null,
+      pickupSlot: orderType === "PICKUP" ? pickupSlot : null,
+      paymentMethod,
+      items: cartItems.map((item) => ({
+        productId: Number(item.id),
+        quantity: Number(item.quantity) || 1,
+      })),
+    };
+
+    try {
+      setIsPlacingOrder(true);
+
+      // POST /api/orders  -> saved in MySQL, stock is reduced
+      const response = await api.post("/orders", payload);
+
       if (typeof clearCart === "function") {
         clearCart();
       }
 
-      navigate("/order-success");
-    }, 700);
+      navigate("/order-success", {
+        replace: true,
+        state: { order: response.data },
+      });
+    } catch (error) {
+      console.error("PLACE ORDER ERROR:", error.response?.data || error);
+      setOrderError(
+        getErrorMessage(error, "Could not place your order. Please try again.")
+      );
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
 
   if (cartItems.length === 0) {
@@ -222,6 +287,85 @@ function Checkout() {
 
             </div>
 
+            <div className="checkout-card">
+              <div className="checkout-card-header">
+                <div>
+                  <h2>Delivery &amp; Payment</h2>
+                  <p>Tell us how you want to receive your order</p>
+                </div>
+              </div>
+
+              <div className="checkout-options">
+                <div className="option-toggle">
+                  <button
+                    type="button"
+                    className={orderType === "DELIVERY" ? "active" : ""}
+                    onClick={() => setOrderType("DELIVERY")}
+                  >
+                    🚚 Home Delivery
+                  </button>
+                  <button
+                    type="button"
+                    className={orderType === "PICKUP" ? "active" : ""}
+                    onClick={() => setOrderType("PICKUP")}
+                  >
+                    🏬 Store Pickup
+                  </button>
+                </div>
+
+                {orderType === "DELIVERY" ? (
+                  <label className="option-field">
+                    <span>Delivery address</span>
+                    <textarea
+                      rows="3"
+                      value={deliveryAddress}
+                      onChange={(e) => setDeliveryAddress(e.target.value)}
+                      placeholder="House no, street, area, city, PIN code"
+                    />
+                  </label>
+                ) : (
+                  <label className="option-field">
+                    <span>Pickup time</span>
+                    <select
+                      value={pickupSlot}
+                      onChange={(e) => setPickupSlot(e.target.value)}
+                    >
+                      <option value="">Select a time slot</option>
+                      {pickupSlots.map((slot) => (
+                        <option key={slot} value={slot}>
+                          {slot}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                <label className="option-field">
+                  <span>Payment method</span>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  >
+                    <option value="COD">
+                      {orderType === "DELIVERY"
+                        ? "Cash on Delivery"
+                        : "Pay at Store (Cash)"}
+                    </option>
+                    <option value="UPI">
+                      {orderType === "DELIVERY"
+                        ? "UPI on Delivery"
+                        : "UPI at Store"}
+                    </option>
+                    <option value="CARD">
+                      {orderType === "DELIVERY"
+                        ? "Card on Delivery"
+                        : "Card at Store"}
+                    </option>
+                  </select>
+                </label>
+              </div>
+            </div>
+
             <Link
               to="/products"
               className="continue-link"
@@ -306,6 +450,12 @@ function Checkout() {
               </strong>
 
             </div>
+
+            {orderError && (
+              <div className="checkout-error" role="alert">
+                {orderError}
+              </div>
+            )}
 
             <button
               className="place-order-btn"

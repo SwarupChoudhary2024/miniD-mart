@@ -10,7 +10,10 @@ import {
   CartContext,
 } from "../context/CartContext";
 
+import api, { getErrorMessage } from "../Services/api";
+
 import "../css/Home.css";
+import { getProductMrp, getDiscountPercent, formatRupees } from "../Services/productPricing";
 
 function Home() {
 
@@ -80,19 +83,9 @@ function Home() {
 
           setLoading(true);
 
-          const response =
-            await fetch(
-              "http://localhost:8080/api/products"
-            );
+          const response = await api.get("/products");
 
-          if (!response.ok) {
-            throw new Error(
-              "Failed to load products"
-            );
-          }
-
-          const data =
-            await response.json();
+        const data = response.data;
 
           setProducts(
             Array.isArray(data)
@@ -108,7 +101,7 @@ function Home() {
           );
 
           setError(
-            error.message
+            getErrorMessage(error, "Failed to load products")
           );
 
         } finally {
@@ -599,20 +592,18 @@ function Home() {
                         key={product.id}
                       >
 
-                        {product.discount && (
-
+                        {getDiscountPercent(product) > 0 && (
                           <div className="modern-discount">
-                            {product.discount}
+                            {getDiscountPercent(product)}% OFF
                           </div>
-
                         )}
 
                         <div className="modern-product-image">
 
-                          {product.imageUrl ? (
+                          {product.imageUrl || product.image ? (
 
                             <img
-                              src={product.imageUrl}
+                              src={product.imageUrl || product.image}
                               alt={product.name}
                             />
 
@@ -651,22 +642,17 @@ function Home() {
                             <div>
 
                               <strong>
-                                ₹{product.price}
+                                {formatRupees(product.price)}
                               </strong>
 
-                              {product.mrp &&
-                                Number(
-                                  product.mrp
-                                ) >
-                                Number(
-                                  product.price
-                                ) && (
-
-                                  <del>
-                                    ₹{product.mrp}
-                                  </del>
-
-                                )}
+                              {getProductMrp(product) > Number(product.price || 0) && (
+                                <>
+                                  <del>{formatRupees(getProductMrp(product))}</del>
+                                  <small className="home-product-saving">
+                                    Save {formatRupees(getProductMrp(product) - Number(product.price || 0))}
+                                  </small>
+                                </>
+                              )}
 
                             </div>
 

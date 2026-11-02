@@ -10,6 +10,8 @@ import {
   CartContext,
 } from "../context/CartContext";
 
+import api from "../Services/api";
+
 import "../css/UserDashboard.css";
 
 function UserDashboard({ user }) {
@@ -73,18 +75,9 @@ function UserDashboard({ user }) {
 
         setLoading(true);
 
-        const response = await fetch(
-          "http://localhost:8080/api/products"
-        );
+        const response = await api.get("/products");
 
-        if (!response.ok) {
-          throw new Error(
-            "Failed to load products"
-          );
-        }
-
-        const data =
-          await response.json();
+        const data = response.data;
 
         setProducts(
           Array.isArray(data)

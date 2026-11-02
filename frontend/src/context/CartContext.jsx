@@ -134,6 +134,13 @@ export const CartProvider = ({ children }) => {
         ...safeItems,
         {
           ...product,
+          // product.quantity is the pack size text (e.g. "1 kg") - keep it as
+          // "unit" because "quantity" below is the number of items in the cart.
+          unit:
+            product.unit ||
+            (typeof product.quantity === "string"
+              ? product.quantity
+              : ""),
           quantity: 1,
         },
       ];

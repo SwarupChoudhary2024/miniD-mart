@@ -1,60 +1,34 @@
 package com.minidmart.backend.controller;
 
 import com.minidmart.backend.entity.Order;
-import com.minidmart.backend.repository.OrderRepository;
+import com.minidmart.backend.service.OrderService;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** All orders + status changes for the Admin dashboard (ROLE_ADMIN). */
 @RestController
 @RequestMapping("/api/admin/orders")
 public class AdminOrderController {
 
-    private final OrderRepository orderRepository;
+    private final OrderService orderService;
 
-    public AdminOrderController(OrderRepository orderRepository) {
-        this.orderRepository = orderRepository;
+    public AdminOrderController(OrderService orderService) {
+        this.orderService = orderService;
     }
-
-    // =====================================================
-    // GET ALL ORDERS
-    // =====================================================
 
     @GetMapping
-    public ResponseEntity<List<Order>> getAllOrders() {
-
-        List<Order> orders = orderRepository.findAll();
-
-        return ResponseEntity.ok(orders);
+    public List<Order> getAllOrders() {
+        return orderService.getAllOrders();
     }
 
-
-    // =====================================================
-    // UPDATE ORDER STATUS
-    // =====================================================
-
+    // PATCH /api/admin/orders/{id}/status?status=DISPATCHED
     @PatchMapping("/{orderId}/status")
-    public ResponseEntity<?> updateOrderStatus(
+    public Order updateOrderStatus(
             @PathVariable Long orderId,
-            @RequestParam String status
-    ) {
+            @RequestParam String status) {
 
-        Order order = orderRepository.findById(orderId)
-                .orElse(null);
-
-        if (order == null) {
-            return ResponseEntity
-                    .badRequest()
-                    .body("Order not found");
-        }
-
-        order.setStatus(status.toUpperCase());
-
-        Order updatedOrder =
-                orderRepository.save(order);
-
-        return ResponseEntity.ok(updatedOrder);
+        return orderService.updateOrderStatus(orderId, status);
     }
 }

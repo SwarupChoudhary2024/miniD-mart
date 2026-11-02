@@ -1,8 +1,10 @@
 package com.minidmart.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
 @Table(name = "products")
@@ -157,5 +159,34 @@ public class Product {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    // ------------------------------------------------------------------
+    // Read-only helper fields used by the React pages.
+    // ------------------------------------------------------------------
+
+    /** The pages read product.imageUrl; the database column is "image". */
+    @JsonProperty(value = "imageUrl", access = JsonProperty.Access.READ_ONLY)
+    public String getImageUrl() {
+        return image;
+    }
+
+    /** Some pages read product.stock; the database column is stock_quantity. */
+    @JsonProperty(value = "stock", access = JsonProperty.Access.READ_ONLY)
+    public Integer getStock() {
+        return stockQuantity;
+    }
+
+    /** "20% OFF" badge, calculated from MRP and selling price. */
+    @JsonProperty(value = "discount", access = JsonProperty.Access.READ_ONLY)
+    public String getDiscount() {
+        if (mrp == null || price == null
+                || mrp.signum() <= 0 || mrp.compareTo(price) <= 0) {
+            return null;
+        }
+        BigDecimal percent = mrp.subtract(price)
+                .multiply(BigDecimal.valueOf(100))
+                .divide(mrp, 0, RoundingMode.HALF_UP);
+        return percent.signum() > 0 ? percent.toPlainString() + "% OFF" : null;
     }
 }

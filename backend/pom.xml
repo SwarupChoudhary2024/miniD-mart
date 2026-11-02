@@ -11,8 +11,8 @@
 	<groupId>com.minidmart</groupId>
 	<artifactId>backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name/>
-	<description/>
+	<name>mini-dmart-backend</name>
+	<description>Mini D-Mart grocery store REST API</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -78,9 +78,11 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- H2 is used only by the automated tests so they run without MySQL -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 		<!-- JJWT Dependencies -->

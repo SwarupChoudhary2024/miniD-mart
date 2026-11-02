@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import api, { getErrorMessage } from "../Services/api";
 import "../css/Login.css";
 
 function Login({ setUser }) {
@@ -61,30 +62,12 @@ function Login({ setUser }) {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/login",
-        {
-          method: "POST",
+      const response = await api.post("/auth/login", {
+        email: formData.email.trim(),
+        password: formData.password,
+      });
 
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify(formData),
-        }
-      );
-
-      const data = await response.json();
-
-      console.log("LOGIN RESPONSE:", data);
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            data.error ||
-            "Invalid email or password"
-        );
-      }
+      const data = response.data;
 
       const token =
         data.token || data.jwt;
@@ -151,11 +134,6 @@ function Login({ setUser }) {
         role
       );
 
-      console.log(
-        "SAVED USER:",
-        loggedInUser
-      );
-
       // Update React state
       if (setUser) {
         setUser(loggedInUser);
@@ -188,8 +166,10 @@ function Login({ setUser }) {
       );
 
       setError(
-        err.message ||
+        getErrorMessage(
+          err,
           "Login failed. Please try again."
+        )
       );
 
     } finally {

@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../Services/api";
+import { getProductMrp, getDiscountPercent, formatRupees } from "../Services/productPricing";
+import "../css/AdminDashboard.css";
 
 function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("overview");
@@ -176,41 +178,54 @@ function AdminDashboard() {
     // OPEN PRODUCT MODAL
     // =========================================================
 
-    const handleOpenModal = (product = null) => {
+    const handleOpenModal = async (product = null) => {
         if (product) {
             setEditingProduct(product);
-
             setProductForm({
                 name: product.name || "",
-                category:
-                    product.category || "Grocery",
-                productType:
-                    product.productType || "",
-                image:
-                    product.image ||
-                    product.imageUrl ||
-                    "",
-                price:
-                    product.price ?? "",
-                mrp:
-                    product.mrp ?? "",
-                quantity:
-                    product.quantity || "",
-                stock:
-                    product.stock ??
-                    product.stockQuantity ??
-                    ""
+                category: typeof product.category === "object" ? (product.category?.name || "Grocery") : (product.category || "Grocery"),
+                productType: product.productType || product.product_type || "",
+                image: product.image || product.imageUrl || "",
+                price: product.price ?? "",
+                mrp: product.mrp ?? product.maximumRetailPrice ?? product.price ?? "",
+                quantity: product.quantity ?? product.unit ?? "",
+                stock: product.stockQuantity ?? product.stock ?? product.availableQuantity ?? ""
             });
+            setImageInputType("file");
+            setShowModal(true);
+
+            // Fetch the latest full product record when opening Edit.
+            try {
+                let response;
+                try {
+                    response = await api.get(`/admin/products/${product.id}`);
+                } catch (adminDetailError) {
+                    response = await api.get(`/products/${product.id}`);
+                }
+                const details = response.data?.product || response.data;
+                if (details && typeof details === "object") {
+                    setProductForm({
+                        name: details.name ?? product.name ?? "",
+                        category: typeof details.category === "object" ? (details.category?.name || "Grocery") : (details.category ?? product.category ?? "Grocery"),
+                        productType: details.productType ?? details.product_type ?? product.productType ?? "",
+                        image: details.image ?? details.imageUrl ?? product.image ?? product.imageUrl ?? "",
+                        price: details.price ?? product.price ?? "",
+                        mrp: details.mrp ?? details.maximumRetailPrice ?? product.mrp ?? product.price ?? "",
+                        quantity: details.quantity ?? details.unit ?? product.quantity ?? "",
+                        stock: details.stockQuantity ?? details.stock ?? details.availableQuantity ?? product.stockQuantity ?? product.stock ?? ""
+                    });
+                    setEditingProduct(details);
+                }
+            } catch (err) {
+                // Some backends expose only GET /products; keep the already loaded product values.
+                console.warn("Could not fetch product detail; using product list data.", err);
+            }
         } else {
             setEditingProduct(null);
-
-            setProductForm({
-                ...emptyProductForm
-            });
+            setProductForm({ ...emptyProductForm });
+            setImageInputType("file");
+            setShowModal(true);
         }
-
-        setImageInputType("file");
-        setShowModal(true);
     };
 
     // =========================================================
@@ -254,9 +269,9 @@ function AdminDashboard() {
 
         if (
             productForm.mrp === "" ||
-            Number(productForm.mrp) < 0
+            Number(productForm.mrp) < Number(productForm.price)
         ) {
-            return "Enter a valid MRP.";
+            return "MRP must be equal to or greater than the selling price.";
         }
 
         if (!productForm.quantity.trim()) {
@@ -308,7 +323,7 @@ function AdminDashboard() {
                     Number(productForm.price),
 
                 mrp:
-                    Number(productForm.mrp),
+                    Number(productForm.mrp || productForm.price),
 
                 quantity:
                     productForm.quantity.trim(),
@@ -478,12 +493,15 @@ function AdminDashboard() {
                     color: "#92400e"
                 };
 
+            case "PREPARING":
+            case "READY":
             case "DISPATCHED":
                 return {
                     backgroundColor: "#dbeafe",
                     color: "#1d4ed8"
                 };
 
+            case "COMPLETED":
             case "DELIVERED":
                 return {
                     backgroundColor: "#dcfce7",
@@ -525,15 +543,13 @@ function AdminDashboard() {
     // =========================================================
 
     const getCustomerName = (order) => {
-        if (order.user?.name) {
-            return order.user.name;
-        }
-
-        if (order.user?.email) {
-            return order.user.email;
-        }
-
-        return "Customer";
+        return (
+            order.customerName ||
+            order.user?.name ||
+            order.customerEmail ||
+            order.user?.email ||
+            "Customer"
+        );
     };
 
     // =========================================================
@@ -627,6 +643,7 @@ function AdminDashboard() {
 
     return (
         <div
+            className="admin-dashboard-root"
             style={{
                 display: "flex",
                 minHeight: "100vh",
@@ -897,6 +914,8 @@ function AdminDashboard() {
                                                 Price
                                             </th>
 
+                                            <th style={thStyle}>MRP</th>
+                                            <th style={thStyle}>Discount</th>
                                             <th style={thStyle}>
                                                 Stock
                                             </th>
@@ -913,7 +932,7 @@ function AdminDashboard() {
 
                                             <tr>
                                                 <td
-                                                    colSpan="6"
+                                                    colSpan="8"
                                                     style={{
                                                         ...tdStyle,
                                                         textAlign:
@@ -990,7 +1009,7 @@ function AdminDashboard() {
                                                             }
                                                         >
                                                             {
-                                                                product.category
+                                                                product.category?.name || product.category || "—"
                                                             }
                                                         </td>
 
@@ -1003,6 +1022,14 @@ function AdminDashboard() {
                                                             {
                                                                 product.price
                                                             }
+                                                        </td>
+
+                                                        <td style={tdStyle}>
+                                                            {formatRupees(getProductMrp(product))}
+                                                        </td>
+
+                                                        <td style={tdStyle}>
+                                                            {getDiscountPercent(product)}% OFF
                                                         </td>
 
                                                         <td
@@ -1501,12 +1528,24 @@ function AdminDashboard() {
                                                                     PENDING
                                                                 </option>
 
+                                                                <option value="PREPARING">
+                                                                    PREPARING
+                                                                </option>
+
+                                                                <option value="READY">
+                                                                    READY
+                                                                </option>
+
                                                                 <option value="DISPATCHED">
                                                                     DISPATCHED
                                                                 </option>
 
                                                                 <option value="DELIVERED">
                                                                     DELIVERED
+                                                                </option>
+
+                                                                <option value="COMPLETED">
+                                                                    COMPLETED
                                                                 </option>
 
                                                                 <option value="CANCELLED">
@@ -1624,7 +1663,7 @@ function AdminDashboard() {
                                 style={{
                                     display: "grid",
                                     gridTemplateColumns:
-                                        "1fr 1fr",
+                                        "repeat(auto-fit, minmax(220px, 1fr))",
                                     gap: "15px"
                                 }}
                             >
@@ -1784,6 +1823,14 @@ function AdminDashboard() {
                                                 "border-box"
                                         }}
                                     />
+                                </div>
+
+                                <div className="admin-discount-preview">
+                                    <label>Customer Discount</label>
+                                    <strong>{getDiscountPercent({ price: productForm.price, mrp: productForm.mrp })}% OFF</strong>
+                                    <small>
+                                        Customer saves {formatRupees(Math.max(0, Number(productForm.mrp || 0) - Number(productForm.price || 0)))}
+                                    </small>
                                 </div>
 
                                 <div>

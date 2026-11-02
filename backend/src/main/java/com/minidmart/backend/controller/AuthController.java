@@ -5,6 +5,7 @@ import com.minidmart.backend.dto.LoginRequest;
 import com.minidmart.backend.dto.RegisterRequest;
 import com.minidmart.backend.service.AuthService;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,20 +20,12 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(
-            @RequestBody RegisterRequest request) {
-
-        return ResponseEntity.ok(
-                authService.register(request)
-        );
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(
-            @RequestBody LoginRequest request) {
-
-        return ResponseEntity.ok(
-                authService.login(request)
-        );
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 }

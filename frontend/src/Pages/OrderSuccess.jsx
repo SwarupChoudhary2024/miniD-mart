@@ -1,8 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "../css/OrderSuccess.css";
 
 function OrderSuccess() {
+  const location = useLocation();
+  const order = location.state?.order;
+
   return (
     <div className="order-success-page">
       <div className="success-background-shape shape-one"></div>
@@ -27,6 +30,19 @@ function OrderSuccess() {
           Your order has been placed!
         </h1>
 
+        {order && (
+          <p className="success-message">
+            Order <strong>#{order.id}</strong> &middot; Total{" "}
+            <strong>
+              ₹{Number(order.totalAmount || 0).toFixed(2)}
+            </strong>{" "}
+            &middot;{" "}
+            {order.orderType === "PICKUP"
+              ? `Pickup: ${order.pickupSlot}`
+              : "Home delivery"}
+          </p>
+        )}
+
         <p className="success-message">
           Thank you for shopping with{" "}
           <strong>Mini D-Mart</strong>.
@@ -47,8 +63,8 @@ function OrderSuccess() {
             </h3>
 
             <p>
-              Your order confirmation and invoice
-              will be sent to your registered email.
+              Our team will prepare your order. You can follow
+              its progress anytime in My Orders.
             </p>
           </div>
         </div>
@@ -57,7 +73,7 @@ function OrderSuccess() {
 
         <div className="success-actions">
           <Link
-            to="/user"
+            to="/products"
             className="continue-shopping-btn"
           >
             <span>
@@ -70,10 +86,10 @@ function OrderSuccess() {
           </Link>
 
           <Link
-            to="/products"
+            to="/orders"
             className="browse-products-btn"
           >
-            Browse Products
+            View My Orders
           </Link>
         </div>
 

@@ -93,6 +93,7 @@ function Header({ user, setUser }) {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("role");
 
     if (setUser) {
       setUser(null);
@@ -356,7 +357,16 @@ function Header({ user, setUser }) {
                       className="dropdown-menu-item"
                       onClick={() => {
                         setIsProfileOpen(false);
-                        navigate("/user");
+                        const role = String(user?.role || "")
+                          .replace("ROLE_", "")
+                          .toUpperCase();
+                        navigate(
+                          role === "ADMIN"
+                            ? "/admin"
+                            : role === "STAFF"
+                            ? "/staff"
+                            : "/user"
+                        );
                       }}
                     >
                       <span>
@@ -365,6 +375,24 @@ function Header({ user, setUser }) {
 
                       <span>
                         My Dashboard
+                      </span>
+                    </button>
+
+                    {/* MY ORDERS */}
+
+                    <button
+                      className="dropdown-menu-item"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        navigate("/orders");
+                      }}
+                    >
+                      <span>
+                        📦
+                      </span>
+
+                      <span>
+                        My Orders
                       </span>
                     </button>
 

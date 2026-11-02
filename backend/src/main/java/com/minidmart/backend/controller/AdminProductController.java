@@ -1,98 +1,43 @@
 package com.minidmart.backend.controller;
 
 import com.minidmart.backend.entity.Product;
-import com.minidmart.backend.repository.ProductRepository;
+import com.minidmart.backend.service.ProductService;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/** Admin-only product management used by the Admin dashboard (ROLE_ADMIN). */
 @RestController
 @RequestMapping("/api/admin/products")
-@CrossOrigin(origins = "http://localhost:5173")
 public class AdminProductController {
 
-    private final ProductRepository productRepository;
+    private final ProductService productService;
 
-    public AdminProductController(ProductRepository productRepository) {
-        this.productRepository = productRepository;
+    public AdminProductController(ProductService productService) {
+        this.productService = productService;
     }
 
-    // GET ALL PRODUCTS
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-
-        return ResponseEntity.ok(
-                productRepository.findAll()
-        );
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
     }
 
-    // ADD PRODUCT
     @PostMapping
-    public ResponseEntity<Product> addProduct(
-            @RequestBody Product product) {
-
-        try {
-
-            if (product.getStockQuantity() == null) {
-                product.setStockQuantity(0);
-            }
-
-            Product savedProduct =
-                    productRepository.save(product);
-
-            return ResponseEntity.ok(savedProduct);
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-
-            return ResponseEntity
-                    .internalServerError()
-                    .build();
-        }
+    public ResponseEntity<Product> addProduct(@RequestBody Product product) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(product));
     }
 
-    // UPDATE PRODUCT
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(
-            @PathVariable Long id,
-            @RequestBody Product productDetails) {
-
-        return productRepository.findById(id)
-                .map(product -> {
-
-                    product.setName(productDetails.getName());
-                    product.setCategory(productDetails.getCategory());
-                    product.setProductType(productDetails.getProductType());
-                    product.setImage(productDetails.getImage());
-                    product.setPrice(productDetails.getPrice());
-                    product.setMrp(productDetails.getMrp());
-                    product.setQuantity(productDetails.getQuantity());
-                    product.setStockQuantity(
-                            productDetails.getStockQuantity()
-                    );
-
-                    return ResponseEntity.ok(
-                            productRepository.save(product)
-                    );
-
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public Product updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
+        return productService.updateProduct(id, productDetails);
     }
 
-    // DELETE PRODUCT
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(
-            @PathVariable Long id) {
-
-        if (!productRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-
-        productRepository.deleteById(id);
-
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 }

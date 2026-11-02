@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../Services/api";
+import { getProductMrp, getDiscountPercent, formatRupees } from "../Services/productPricing";
+import "../css/StaffDashboard.css";
 
 function StaffDashboard() {
     const [orders, setOrders] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [productsLoading, setProductsLoading] = useState(true);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -12,7 +16,22 @@ function StaffDashboard() {
 
     useEffect(() => {
         fetchOrders();
+        fetchProducts();
     }, []);
+
+    const fetchProducts = async () => {
+        try {
+            setProductsLoading(true);
+            const response = await api.get("/products");
+            const data = response.data;
+            setProducts(Array.isArray(data) ? data : data?.products || []);
+        } catch (err) {
+            console.error("STAFF PRODUCT INVENTORY ERROR:", err.response?.data || err);
+            setProducts([]);
+        } finally {
+            setProductsLoading(false);
+        }
+    };
 
     const fetchOrders = async () => {
         try {
@@ -244,6 +263,7 @@ function StaffDashboard() {
 
     return (
         <div
+            className="staff-dashboard-page"
             style={{
                 minHeight: "100vh",
                 backgroundColor: "#f8fafc",
@@ -287,8 +307,8 @@ function StaffDashboard() {
                 </div>
 
                 <button
-                    onClick={fetchOrders}
-                    disabled={loading}
+                    onClick={() => { fetchOrders(); fetchProducts(); }}
+                    disabled={loading || productsLoading}
                     style={{
                         backgroundColor: "#16a34a",
                         color: "#ffffff",
@@ -299,12 +319,60 @@ function StaffDashboard() {
                             ? "not-allowed"
                             : "pointer",
                         fontWeight: "600",
-                        opacity: loading ? 0.6 : 1
+                        opacity: loading || productsLoading ? 0.6 : 1
                     }}
                 >
-                    🔄 Refresh Orders
+                    🔄 Refresh Dashboard
                 </button>
             </div>
+
+            {/* ================= PRODUCT INVENTORY ================= */}
+            <section className="staff-inventory-section">
+                <div className="staff-inventory-heading">
+                    <div>
+                        <h2>Product Inventory</h2>
+                        <p>Live stock quantities available for order preparation.</p>
+                    </div>
+                    <span>{products.length} products</span>
+                </div>
+
+                {productsLoading ? (
+                    <p className="staff-inventory-empty">Loading product quantities...</p>
+                ) : products.length === 0 ? (
+                    <p className="staff-inventory-empty">No product inventory found.</p>
+                ) : (
+                    <div className="staff-inventory-grid">
+                        {products.map((product) => {
+                            const stock = Number(product.stockQuantity ?? product.stock ?? product.availableQuantity ?? 0);
+                            const mrp = getProductMrp(product);
+                            const discount = getDiscountPercent(product);
+                            return (
+                                <article className="staff-inventory-card" key={product.id}>
+                                    <div className="staff-inventory-product">
+                                        {(product.imageUrl || product.image) ? (
+                                            <img src={product.imageUrl || product.image} alt={product.name} />
+                                        ) : <div className="staff-inventory-placeholder">🛒</div>}
+                                        <div>
+                                            <h3>{product.name}</h3>
+                                            <p>{product.category?.name || product.category || "Daily Essentials"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="staff-inventory-meta">
+                                        <span>Unit: <strong>{product.quantity || product.unit || "1 Unit"}</strong></span>
+                                        <span>Price: <strong>{formatRupees(product.price)}</strong></span>
+                                        <span>MRP: <strong>{formatRupees(mrp)}</strong></span>
+                                        <span>Discount: <strong>{discount}%</strong></span>
+                                    </div>
+                                    <div className={`staff-stock-quantity ${stock <= 0 ? "is-empty" : stock <= 5 ? "is-low" : ""}`}>
+                                        <span>Available quantity</span>
+                                        <strong>{stock}</strong>
+                                    </div>
+                                </article>
+                            );
+                        })}
+                    </div>
+                )}
+            </section>
 
             {/* ================= ERROR ================= */}
 

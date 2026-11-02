@@ -73,10 +73,10 @@ function Cart() {
 
               <div className="cart-item-image">
 
-                {item.imageUrl ? (
+                {item.imageUrl || item.image ? (
 
                   <img
-                    src={item.imageUrl}
+                    src={item.imageUrl || item.image}
                     alt={item.name}
                   />
 

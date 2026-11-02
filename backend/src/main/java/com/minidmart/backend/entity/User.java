@@ -1,5 +1,6 @@
 package com.minidmart.backend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,6 +40,9 @@ public class User implements UserDetails {
 
     private String name;
 
+    @Column(length = 20)
+    private String phone;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "user_roles",
@@ -77,6 +81,7 @@ public class User implements UserDetails {
         return email;
     }
 
+    @JsonIgnore
     @Override
     public String getPassword() {
         return password;
@@ -120,6 +125,14 @@ public class User implements UserDetails {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getName() {

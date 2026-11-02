@@ -1,0 +1,173 @@
+.myorders-page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1f2a23;
+}
+
+.myorders-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.myorders-header h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.myorders-refresh {
+  padding: 8px 14px;
+  border: 1.5px solid #dfe7e1;
+  border-radius: 10px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.myorders-info {
+  text-align: center;
+  color: #5b6b61;
+  padding: 60px 0;
+}
+
+.myorders-error {
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: #fdecec;
+  border: 1px solid #f5b5b5;
+  color: #b42318;
+}
+
+.myorders-empty {
+  text-align: center;
+  padding: 56px 20px;
+  border: 1.5px dashed #cfe0d4;
+  border-radius: 18px;
+  background: #f7fcf9;
+}
+
+.myorders-empty-icon {
+  font-size: 44px;
+}
+
+.myorders-shop-btn {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  background: #2e9e5b;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.myorders-card {
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid #e3ebe5;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(20, 60, 35, 0.05);
+}
+
+.myorders-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.myorders-card-top h3 {
+  margin: 0 0 4px;
+}
+
+.myorders-date {
+  font-size: 13px;
+  color: #6b7a70;
+}
+
+.myorders-status {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #fff4d6;
+  color: #8a5a00;
+  white-space: nowrap;
+}
+
+.status-preparing,
+.status-ready {
+  background: #e3efff;
+  color: #1d4f9c;
+}
+
+.status-dispatched {
+  background: #efe5ff;
+  color: #5a2ba8;
+}
+
+.status-delivered,
+.status-completed {
+  background: #dff5e7;
+  color: #17753f;
+}
+
+.status-cancelled {
+  background: #fdecec;
+  color: #b42318;
+}
+
+.myorders-items {
+  list-style: none;
+  margin: 14px 0;
+  padding: 0;
+  border-top: 1px solid #eef3ef;
+}
+
+.myorders-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eef3ef;
+}
+
+.myorders-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  color: #5b6b61;
+}
+
+.myorders-card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.myorders-total {
+  font-size: 18px;
+}
+
+.myorders-cancel {
+  padding: 9px 16px;
+  border: 1.5px solid #f0b4b4;
+  border-radius: 10px;
+  background: #fff;
+  color: #b42318;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.myorders-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

@@ -16,6 +16,7 @@ import StaffDashboard from "./Pages/StaffDashboard";
 import UserDashboard from "./Pages/UserDashboard";
 import NotFound from "./Pages/NotFound";
 import OrderSuccess from "./Pages/OrderSuccess";
+import MyOrders from "./Pages/MyOrders";
 
 function App() {
   // ================================
@@ -170,6 +171,26 @@ function App() {
         />
 
         {/* ================================
+            MY ORDERS
+            CUSTOMER / STAFF / ADMIN
+        ================================= */}
+
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "CUSTOMER",
+                "STAFF",
+                "ADMIN",
+              ]}
+            >
+              <MyOrders />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ================================
             STAFF DASHBOARD
         ================================= */}
 
@@ -237,6 +258,21 @@ function App() {
           }
         />
 
+        <Route
+          path="/order-success"
+          element={
+            <ProtectedRoute
+              allowedRoles={[
+                "CUSTOMER",
+                "STAFF",
+                "ADMIN",
+              ]}
+            >
+              <OrderSuccess />
+            </ProtectedRoute>
+          }
+        />
+
         {/* ================================
             404
         ================================= */}
@@ -246,7 +282,6 @@ function App() {
           element={<NotFound />}
         />
  
-        <Route path="/order-success" element={<OrderSuccess/>}/>
       </Routes>
     </>
   );
