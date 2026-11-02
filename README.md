@@ -1,5 +1,4 @@
-# Online Shopping System
-
+# MiniD-mart Project
 A full-stack Online Shopping System that allows customers to browse products, manage their cart, and place orders. It also provides separate Admin and Staff dashboards for product and inventory management.
 
 ## Features
